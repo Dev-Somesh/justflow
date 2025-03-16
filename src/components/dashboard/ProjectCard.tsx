@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import Avatar from '@/components/ui/Avatar';
+import UserAvatar from '@/components/ui/UserAvatar';
 import { Project, useProject } from '@/contexts/ProjectContext';
 
 interface ProjectCardProps {
@@ -66,7 +66,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         <div className="flex -space-x-2">
           {assignees.slice(0, 3).map((user) => (
             <div key={user!.id} className="border-2 border-white rounded-full">
-              <Avatar src={user!.avatar} name={user!.name} size="sm" />
+              <UserAvatar src={user!.avatar} name={user!.name} size="sm" />
             </div>
           ))}
           {assignees.length > 3 && (

@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Avatar as ShadcnAvatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-interface AvatarProps {
+interface UserAvatarProps {
   src?: string;
   name: string;
   size?: 'sm' | 'md' | 'lg';
@@ -17,7 +17,7 @@ const getInitials = (name: string): string => {
     .substring(0, 2);
 };
 
-const Avatar: React.FC<AvatarProps> = ({ src, name, size = 'md' }) => {
+const UserAvatar: React.FC<UserAvatarProps> = ({ src, name, size = 'md' }) => {
   const sizeClasses = {
     sm: 'h-8 w-8 text-xs',
     md: 'h-10 w-10 text-sm',
@@ -25,13 +25,13 @@ const Avatar: React.FC<AvatarProps> = ({ src, name, size = 'md' }) => {
   };
 
   return (
-    <ShadcnAvatar className={sizeClasses[size]}>
+    <Avatar className={sizeClasses[size]}>
       {src ? <AvatarImage src={src} alt={name} /> : null}
       <AvatarFallback className="bg-plane-purple-light text-white font-medium">
         {getInitials(name)}
       </AvatarFallback>
-    </ShadcnAvatar>
+    </Avatar>
   );
 };
 
-export default Avatar;
+export default UserAvatar;

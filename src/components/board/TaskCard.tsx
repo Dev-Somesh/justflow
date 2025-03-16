@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Task, TaskPriority, useProject } from '@/contexts/ProjectContext';
-import Avatar from '@/components/ui/Avatar';
+import UserAvatar from '@/components/ui/UserAvatar';
 import { MessageSquare, Calendar } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -38,7 +38,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       <CardFooter className="p-3 pt-0 flex justify-between items-center">
         <div className="flex items-center gap-2">
           {assignee && (
-            <Avatar src={assignee.avatar} name={assignee.name} size="sm" />
+            <UserAvatar src={assignee.avatar} name={assignee.name} size="sm" />
           )}
         </div>
         <div className="flex items-center gap-3 text-gray-500">

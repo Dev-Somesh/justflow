@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import Avatar from '@/components/ui/Avatar';
+import UserAvatar from '@/components/ui/UserAvatar';
 import { Task, TaskPriority, TaskStatus, Comment, useProject } from '@/contexts/ProjectContext';
 import { format } from 'date-fns';
 import { Calendar, MessageSquare } from 'lucide-react';
@@ -123,7 +123,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
                 <div className="rounded-md border border-input px-3 py-1 flex items-center gap-2">
                   {assignee ? (
                     <>
-                      <Avatar src={assignee.avatar} name={assignee.name} size="sm" />
+                      <UserAvatar src={assignee.avatar} name={assignee.name} size="sm" />
                       <span className="text-sm truncate">{assignee.name}</span>
                     </>
                   ) : (
@@ -164,7 +164,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
                   const commentUser = getUserById(comment.userId);
                   return (
                     <div key={comment.id} className="flex gap-3">
-                      <Avatar 
+                      <UserAvatar 
                         src={commentUser?.avatar} 
                         name={commentUser?.name || 'User'} 
                         size="sm" 
@@ -185,7 +185,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
             </div>
             
             <div className="flex gap-3">
-              <Avatar 
+              <UserAvatar 
                 src={users[0].avatar} 
                 name={users[0].name} 
                 size="sm" 

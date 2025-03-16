@@ -12,7 +12,7 @@ import {
   ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Avatar from '@/components/ui/Avatar';
+import UserAvatar from '@/components/ui/UserAvatar';
 import { useProject } from '@/contexts/ProjectContext';
 
 interface AppLayoutProps {
@@ -87,7 +87,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         {/* User */}
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center gap-3">
-            <Avatar 
+            <UserAvatar 
               src={users[0].avatar} 
               name={users[0].name} 
               size="sm" 
