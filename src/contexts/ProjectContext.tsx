@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Types
@@ -9,6 +8,8 @@ export interface User {
   id: string;
   name: string;
   avatar: string;
+  email: string;
+  role: string;
 }
 
 export interface Comment {
@@ -38,9 +39,27 @@ export interface Project {
 
 // Mock data
 const mockUsers: User[] = [
-  { id: 'user-1', name: 'Alex Johnson', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex' },
-  { id: 'user-2', name: 'Sarah Miller', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah' },
-  { id: 'user-3', name: 'Jamie Smith', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jamie' },
+  { 
+    id: 'user-1', 
+    name: 'Alex Johnson', 
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
+    email: 'alex@example.com',
+    role: 'Product Manager'
+  },
+  { 
+    id: 'user-2', 
+    name: 'Sarah Miller', 
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
+    email: 'sarah@example.com',
+    role: 'UI Designer'
+  },
+  { 
+    id: 'user-3', 
+    name: 'Jamie Smith', 
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jamie',
+    email: 'jamie@example.com',
+    role: 'Developer'
+  },
 ];
 
 const mockProjects: Project[] = [
@@ -122,6 +141,7 @@ interface ProjectContextType {
   projects: Project[];
   users: User[];
   currentProject: Project | null;
+  tasks: Task[];
   setCurrentProject: (project: Project) => void;
   addTask: (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments'>) => void;
   updateTaskStatus: (projectId: string, taskId: string, status: TaskStatus) => void;
@@ -138,6 +158,8 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [users] = useState<User[]>(mockUsers);
   const [currentProject, setCurrentProject] = useState<Project | null>(mockProjects[0] || null);
+
+  const tasks = projects.flatMap(project => project.tasks);
 
   const addTask = (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments'>) => {
     setProjects(prevProjects => {
@@ -223,6 +245,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     projects,
     users,
     currentProject,
+    tasks,
     setCurrentProject,
     addTask,
     updateTaskStatus,
