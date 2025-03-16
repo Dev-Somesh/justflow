@@ -24,6 +24,13 @@ const badgeVariants = cva(
         "status-todo": "border-transparent bg-gray-500 text-white hover:bg-gray-600",
         "status-in-progress": "border-transparent bg-blue-500 text-white hover:bg-blue-600",
         "status-done": "border-transparent bg-green-500 text-white hover:bg-green-600",
+        // Add sprint status variants
+        "sprint-planning": "border-transparent bg-purple-500 text-white hover:bg-purple-600",
+        "sprint-active": "border-transparent bg-blue-500 text-white hover:bg-blue-600",
+        "sprint-completed": "border-transparent bg-green-500 text-white hover:bg-green-600",
+        // Add epic status variants
+        "epic-active": "border-transparent bg-indigo-500 text-white hover:bg-indigo-600",
+        "epic-completed": "border-transparent bg-teal-500 text-white hover:bg-teal-600",
       },
     },
     defaultVariants: {

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Types
@@ -35,6 +34,24 @@ export interface TimeRecord {
   note?: string;
 }
 
+export interface Epic {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  status: 'active' | 'completed';
+  createdAt: string;
+}
+
+export interface Sprint {
+  id: string;
+  name: string;
+  goal: string;
+  startDate: string;
+  endDate: string;
+  status: 'planning' | 'active' | 'completed';
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -47,6 +64,11 @@ export interface Task {
   labels: TaskLabel[];
   timeRecords: TimeRecord[];
   dueDate?: string;
+  epicId?: string;
+  sprintId?: string;
+  storyPoints?: number;
+  parentTaskId?: string; // For sub-tasks
+  childTaskIds?: string[]; // For parent-child relationships
 }
 
 export interface Project {
@@ -54,6 +76,8 @@ export interface Project {
   name: string;
   description: string;
   tasks: Task[];
+  epics: Epic[];
+  sprints: Sprint[];
 }
 
 // Mock data for labels
@@ -63,6 +87,46 @@ const defaultLabels: TaskLabel[] = [
   { id: 'label-3', name: 'Documentation', color: '#34D399' },
   { id: 'label-4', name: 'Design', color: '#A78BFA' },
   { id: 'label-5', name: 'Improvement', color: '#FBBF24' },
+];
+
+// Mock epics
+const mockEpics: Epic[] = [
+  {
+    id: 'epic-1',
+    name: 'User Authentication',
+    description: 'Implement secure user authentication and authorization',
+    color: '#8B5CF6',
+    status: 'active',
+    createdAt: '2023-05-15T08:00:00Z',
+  },
+  {
+    id: 'epic-2',
+    name: 'Reporting Dashboard',
+    description: 'Create comprehensive reporting dashboard for project metrics',
+    color: '#EC4899',
+    status: 'active',
+    createdAt: '2023-05-20T10:30:00Z',
+  }
+];
+
+// Mock sprints
+const mockSprints: Sprint[] = [
+  {
+    id: 'sprint-1',
+    name: 'Sprint 1',
+    goal: 'Complete initial website mockups and authentication flow',
+    startDate: '2023-06-01T00:00:00Z',
+    endDate: '2023-06-15T23:59:59Z',
+    status: 'completed',
+  },
+  {
+    id: 'sprint-2',
+    name: 'Sprint 2',
+    goal: 'Implement responsive navigation and optimize performance',
+    startDate: '2023-06-16T00:00:00Z',
+    endDate: '2023-06-30T23:59:59Z',
+    status: 'active',
+  }
 ];
 
 // Mock data
@@ -115,6 +179,9 @@ const mockProjects: Project[] = [
         labels: [{ id: 'label-4', name: 'Design', color: '#A78BFA' }],
         timeRecords: [],
         dueDate: '2023-06-10T23:59:59Z',
+        epicId: 'epic-1',
+        sprintId: 'sprint-1',
+        storyPoints: 5,
       },
       {
         id: 'task-2',
@@ -137,6 +204,10 @@ const mockProjects: Project[] = [
           }
         ],
         dueDate: '2023-06-15T23:59:59Z',
+        epicId: 'epic-1',
+        sprintId: 'sprint-1',
+        storyPoints: 3,
+        childTaskIds: ['task-5'],
       },
       {
         id: 'task-3',
@@ -149,8 +220,28 @@ const mockProjects: Project[] = [
         comments: [],
         labels: [{ id: 'label-5', name: 'Improvement', color: '#FBBF24' }],
         timeRecords: [],
+        epicId: 'epic-2',
+        sprintId: 'sprint-2',
+        storyPoints: 2,
+      },
+      {
+        id: 'task-5',
+        title: 'Add mobile menu toggle',
+        description: 'Create a hamburger menu toggle for mobile navigation',
+        status: 'todo',
+        priority: 'medium',
+        assigneeId: 'user-3',
+        createdAt: '2023-06-05T11:45:00Z',
+        comments: [],
+        labels: [{ id: 'label-2', name: 'Feature', color: '#60A5FA' }],
+        timeRecords: [],
+        parentTaskId: 'task-2',
+        sprintId: 'sprint-2',
+        storyPoints: 1,
       }
     ],
+    epics: mockEpics,
+    sprints: mockSprints,
   },
   {
     id: 'project-2',
@@ -169,6 +260,8 @@ const mockProjects: Project[] = [
         labels: [{ id: 'label-4', name: 'Design', color: '#A78BFA' }],
         timeRecords: [],
         dueDate: '2023-06-20T23:59:59Z',
+        sprintId: 'sprint-2',
+        storyPoints: 3,
       },
       {
         id: 'task-5',
@@ -181,8 +274,12 @@ const mockProjects: Project[] = [
         comments: [],
         labels: [{ id: 'label-3', name: 'Documentation', color: '#34D399' }],
         timeRecords: [],
+        sprintId: 'sprint-2',
+        storyPoints: 2,
       },
     ],
+    epics: [],
+    sprints: [mockSprints[1]],
   },
 ];
 
@@ -194,7 +291,7 @@ interface ProjectContextType {
   tasks: Task[];
   availableLabels: TaskLabel[];
   setCurrentProject: (project: Project) => void;
-  addTask: (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords'>) => void;
+  addTask: (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords' | 'childTaskIds'>) => void;
   updateTaskStatus: (projectId: string, taskId: string, status: TaskStatus) => void;
   addComment: (projectId: string, taskId: string, comment: Omit<Comment, 'id' | 'createdAt'>) => void;
   getTasksByStatus: (projectId: string, status: TaskStatus) => Task[];
@@ -204,6 +301,17 @@ interface ProjectContextType {
   removeLabelFromTask: (projectId: string, taskId: string, labelId: string) => void;
   addTimeRecord: (projectId: string, taskId: string, timeRecord: Omit<TimeRecord, 'id'>) => void;
   updateTaskDueDate: (projectId: string, taskId: string, dueDate?: string) => void;
+  getEpics: (projectId: string) => Epic[];
+  getSprints: (projectId: string) => Sprint[];
+  addEpic: (projectId: string, epic: Omit<Epic, 'id' | 'createdAt'>) => void;
+  addSprint: (projectId: string, sprint: Omit<Sprint, 'id'>) => void;
+  addTaskToSprint: (projectId: string, taskId: string, sprintId: string) => void;
+  addTaskToEpic: (projectId: string, taskId: string, epicId: string) => void;
+  updateTaskStoryPoints: (projectId: string, taskId: string, storyPoints: number) => void;
+  getChildTasks: (projectId: string, parentTaskId: string) => Task[];
+  getTasksByEpic: (projectId: string, epicId: string) => Task[];
+  getTasksBySprint: (projectId: string, sprintId: string) => Task[];
+  getCurrentSprint: (projectId: string) => Sprint | undefined;
 }
 
 // Task filters type
@@ -214,6 +322,8 @@ export interface TaskFilters {
   labelIds?: string[];
   dueDateFrom?: string;
   dueDateTo?: string;
+  epicId?: string;
+  sprintId?: string;
 }
 
 // Create the context
@@ -228,7 +338,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
   const tasks = projects.flatMap(project => project.tasks);
 
-  const addTask = (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords'>) => {
+  const addTask = (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords' | 'childTaskIds'>) => {
     setProjects(prevProjects => {
       return prevProjects.map(project => {
         if (project.id === projectId) {
@@ -243,6 +353,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
                 comments: [],
                 labels: [],
                 timeRecords: [],
+                childTaskIds: [],
               },
             ],
           };
@@ -444,6 +555,144 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const getEpics = (projectId: string): Epic[] => {
+    const project = projects.find(p => p.id === projectId);
+    return project?.epics || [];
+  };
+
+  const getSprints = (projectId: string): Sprint[] => {
+    const project = projects.find(p => p.id === projectId);
+    return project?.sprints || [];
+  };
+
+  const addEpic = (projectId: string, epic: Omit<Epic, 'id' | 'createdAt'>) => {
+    setProjects(prevProjects => {
+      return prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            epics: [
+              ...project.epics,
+              {
+                ...epic,
+                id: `epic-${Date.now()}`,
+                createdAt: new Date().toISOString(),
+              },
+            ],
+          };
+        }
+        return project;
+      });
+    });
+  };
+
+  const addSprint = (projectId: string, sprint: Omit<Sprint, 'id'>) => {
+    setProjects(prevProjects => {
+      return prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            sprints: [
+              ...project.sprints,
+              {
+                ...sprint,
+                id: `sprint-${Date.now()}`,
+              },
+            ],
+          };
+        }
+        return project;
+      });
+    });
+  };
+
+  const addTaskToSprint = (projectId: string, taskId: string, sprintId: string) => {
+    setProjects(prevProjects => {
+      return prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            tasks: project.tasks.map(task => {
+              if (task.id === taskId) {
+                return { ...task, sprintId };
+              }
+              return task;
+            }),
+          };
+        }
+        return project;
+      });
+    });
+  };
+
+  const addTaskToEpic = (projectId: string, taskId: string, epicId: string) => {
+    setProjects(prevProjects => {
+      return prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            tasks: project.tasks.map(task => {
+              if (task.id === taskId) {
+                return { ...task, epicId };
+              }
+              return task;
+            }),
+          };
+        }
+        return project;
+      });
+    });
+  };
+
+  const updateTaskStoryPoints = (projectId: string, taskId: string, storyPoints: number) => {
+    setProjects(prevProjects => {
+      return prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            tasks: project.tasks.map(task => {
+              if (task.id === taskId) {
+                return { ...task, storyPoints };
+              }
+              return task;
+            }),
+          };
+        }
+        return project;
+      });
+    });
+  };
+
+  const getChildTasks = (projectId: string, parentTaskId: string): Task[] => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return [];
+    return project.tasks.filter(task => task.parentTaskId === parentTaskId);
+  };
+
+  const getTasksByEpic = (projectId: string, epicId: string): Task[] => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return [];
+    return project.tasks.filter(task => task.epicId === epicId);
+  };
+
+  const getTasksBySprint = (projectId: string, sprintId: string): Task[] => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return [];
+    return project.tasks.filter(task => task.sprintId === sprintId);
+  };
+
+  const getCurrentSprint = (projectId: string): Sprint | undefined => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return undefined;
+    
+    const today = new Date().toISOString();
+    return project.sprints.find(sprint => 
+      sprint.status === 'active' && 
+      sprint.startDate <= today && 
+      sprint.endDate >= today
+    );
+  };
+
   const contextValue: ProjectContextType = {
     projects,
     users,
@@ -461,6 +710,17 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     removeLabelFromTask,
     addTimeRecord,
     updateTaskDueDate,
+    getEpics,
+    getSprints,
+    addEpic,
+    addSprint,
+    addTaskToSprint,
+    addTaskToEpic,
+    updateTaskStoryPoints,
+    getChildTasks,
+    getTasksByEpic,
+    getTasksBySprint,
+    getCurrentSprint,
   };
 
   return (
@@ -478,3 +738,4 @@ export const useProject = () => {
   }
   return context;
 };
+

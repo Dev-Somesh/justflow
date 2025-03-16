@@ -5,17 +5,24 @@ import ProjectCard from '@/components/dashboard/ProjectCard';
 import { Button } from '@/components/ui/button';
 import { useProject } from '@/contexts/ProjectContext';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   CheckCircle2, 
   Clock, 
   AlertTriangle, 
-  BarChart3
+  BarChart3,
+  LucideGitPullRequest,
+  CalendarDays,
+  Target,
+  Star
 } from 'lucide-react';
+import { format } from 'date-fns';
+import SprintBurndownChart from '@/components/dashboard/SprintBurndownChart';
+import VelocityChart from '@/components/dashboard/VelocityChart';
 
 const Index = () => {
-  const { projects, setCurrentProject, tasks } = useProject();
+  const { projects, setCurrentProject, tasks, currentProject } = useProject();
   const navigate = useNavigate();
 
   const handleProjectClick = (projectId: string) => {
@@ -37,15 +44,31 @@ const Index = () => {
   const completionPercentage = totalTasks > 0 
     ? Math.round((completedTasks / totalTasks) * 100) 
     : 0;
+
+  // Calculate story points statistics
+  const totalStoryPoints = tasks.reduce((total, task) => total + (task.storyPoints || 0), 0);
+  const completedStoryPoints = tasks
+    .filter(task => task.status === 'done')
+    .reduce((total, task) => total + (task.storyPoints || 0), 0);
+  
+  // Get active sprint for current project
+  const currentSprint = currentProject 
+    ? currentProject.sprints.find(sprint => sprint.status === 'active')
+    : null;
   
   return (
     <AppLayout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Projects</h1>
-        <p className="text-gray-500">Manage and track your project tasks</p>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-gray-500">Project metrics and management overview</p>
+        </div>
+        <Button onClick={() => navigate('/epics')}>
+          View Epics & Roadmap
+        </Button>
       </div>
       
-      {/* Statistics Cards */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardContent className="pt-6">
@@ -93,6 +116,95 @@ const Index = () => {
               </div>
               <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Advanced Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Star className="h-5 w-5 text-yellow-500" />
+              <span>Story Points</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div>
+                <p className="text-sm text-gray-500">Total</p>
+                <p className="text-3xl font-bold">{totalStoryPoints}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Completed</p>
+                <p className="text-3xl font-bold">{completedStoryPoints}</p>
+                <p className="text-xs text-gray-500">
+                  {totalStoryPoints > 0 
+                    ? Math.round((completedStoryPoints / totalStoryPoints) * 100) 
+                    : 0}% completed
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <LucideGitPullRequest className="h-5 w-5 text-purple-500" />
+              <span>Current Sprint</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {currentSprint ? (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-medium">{currentSprint.name}</h3>
+                  <Badge>Active</Badge>
+                </div>
+                <p className="text-sm text-gray-500 mb-2">{currentSprint.goal}</p>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <div className="flex items-center gap-1">
+                    <CalendarDays className="h-3 w-3" />
+                    {format(new Date(currentSprint.startDate), 'MMM d')} - {format(new Date(currentSprint.endDate), 'MMM d, yyyy')}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Target className="h-3 w-3" />
+                    {currentProject 
+                      ? currentProject.tasks.filter(t => t.sprintId === currentSprint.id).length 
+                      : 0} tasks
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-gray-500">No active sprint</p>
+                <Button variant="outline" size="sm" className="mt-2">
+                  Start New Sprint
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Sprint Burndown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SprintBurndownChart />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Team Velocity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <VelocityChart />
           </CardContent>
         </Card>
       </div>
