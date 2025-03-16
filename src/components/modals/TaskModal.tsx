@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import UserAvatar from '@/components/ui/UserAvatar';
 import TimeTracker from '@/components/task/TimeTracker';
-import { Task, TaskPriority, TaskStatus, Comment, useProject } from '@/contexts/ProjectContext';
+import { Task, TaskPriority, TaskStatus, Comment, TimeRecord, useProject } from '@/contexts/ProjectContext';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, MessageSquare, Tag, Clock, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
