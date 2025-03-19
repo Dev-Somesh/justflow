@@ -69,15 +69,10 @@ export interface Task {
   storyPoints?: number;
   parentTaskId?: string; // For sub-tasks
   childTaskIds?: string[]; // For parent-child relationships
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  tasks: Task[];
-  epics: Epic[];
-  sprints: Sprint[];
+  dependsOn?: string[]; // IDs of tasks this task depends on
+  blockedBy?: string[]; // IDs of tasks blocking this task
+  estimatedTime?: number; // in minutes
+  actualTime?: number; // in minutes, calculated from time records
 }
 
 // Mock data for labels
@@ -238,6 +233,42 @@ const mockProjects: Project[] = [
         parentTaskId: 'task-2',
         sprintId: 'sprint-2',
         storyPoints: 1,
+      },
+      {
+        id: 'task-6',
+        title: 'Create content strategy',
+        description: 'Develop a comprehensive content strategy for the new website',
+        status: 'todo',
+        priority: 'medium',
+        assigneeId: 'user-2',
+        createdAt: '2023-06-07T14:30:00Z',
+        comments: [],
+        labels: [{ id: 'label-3', name: 'Documentation', color: '#34D399' }],
+        timeRecords: [],
+        dueDate: '2023-06-25T23:59:59Z',
+        epicId: 'epic-1',
+        sprintId: 'sprint-2',
+        storyPoints: 5,
+        dependsOn: ['task-1'],
+        estimatedTime: 480, // 8 hours
+      },
+      {
+        id: 'task-7',
+        title: 'SEO optimization',
+        description: 'Implement SEO best practices across the website',
+        status: 'todo',
+        priority: 'high',
+        assigneeId: 'user-1',
+        createdAt: '2023-06-08T09:45:00Z',
+        comments: [],
+        labels: [{ id: 'label-5', name: 'Improvement', color: '#FBBF24' }],
+        timeRecords: [],
+        dueDate: '2023-06-30T23:59:59Z',
+        epicId: 'epic-2',
+        sprintId: 'sprint-2',
+        storyPoints: 3,
+        blockedBy: ['task-6'],
+        estimatedTime: 360, // 6 hours
       }
     ],
     epics: mockEpics,
@@ -312,6 +343,31 @@ interface ProjectContextType {
   getTasksByEpic: (projectId: string, epicId: string) => Task[];
   getTasksBySprint: (projectId: string, sprintId: string) => Task[];
   getCurrentSprint: (projectId: string) => Sprint | undefined;
+  getTaskDependencies: (projectId: string, taskId: string) => Task[];
+  getTaskBlockers: (projectId: string, taskId: string) => Task[];
+  addTaskDependency: (projectId: string, taskId: string, dependencyId: string) => void;
+  removeTaskDependency: (projectId: string, taskId: string, dependencyId: string) => void;
+  getUserWorkload: (projectId: string, userId: string) => { 
+    assignedTasks: number;
+    totalStoryPoints: number;
+    estimatedHours: number;
+  };
+  getTeamWorkload: (projectId: string) => {
+    [userId: string]: { 
+      assignedTasks: number;
+      totalStoryPoints: number;
+      estimatedHours: number;
+      user: User;
+    }
+  };
+  updateTaskEstimatedTime: (projectId: string, taskId: string, minutes: number) => void;
+  calculateTaskActualTime: (projectId: string, taskId: string) => number;
+  getSprintCapacity: (projectId: string, sprintId: string) => {
+    totalStoryPoints: number;
+    assignedStoryPoints: number;
+    remainingCapacity: number;
+  };
+  addTaskToBoard: (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords' | 'childTaskIds' | 'dependsOn' | 'blockedBy' | 'estimatedTime' | 'actualTime'>) => void;
 }
 
 // Task filters type
@@ -693,6 +749,218 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  const getTaskDependencies = (projectId: string, taskId: string): Task[] => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return [];
+    
+    const task = project.tasks.find(t => t.id === taskId);
+    if (!task || !task.dependsOn) return [];
+    
+    return project.tasks.filter(t => task.dependsOn?.includes(t.id));
+  };
+
+  const getTaskBlockers = (projectId: string, taskId: string): Task[] => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return [];
+    
+    const task = project.tasks.find(t => t.id === taskId);
+    if (!task || !task.blockedBy) return [];
+    
+    return project.tasks.filter(t => task.blockedBy?.includes(t.id));
+  };
+
+  const addTaskDependency = (projectId: string, taskId: string, dependencyId: string) => {
+    if (taskId === dependencyId) return; // Can't depend on itself
+    
+    setProjects(prevProjects => {
+      return prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            tasks: project.tasks.map(task => {
+              if (task.id === taskId) {
+                const dependsOn = task.dependsOn || [];
+                if (dependsOn.includes(dependencyId)) return task;
+                
+                return {
+                  ...task,
+                  dependsOn: [...dependsOn, dependencyId],
+                };
+              }
+              if (task.id === dependencyId) {
+                const blockedBy = task.blockedBy || [];
+                if (blockedBy.includes(taskId)) return task;
+                
+                return {
+                  ...task,
+                  blockedBy: [...blockedBy, taskId],
+                };
+              }
+              return task;
+            }),
+          };
+        }
+        return project;
+      });
+    });
+  };
+
+  const removeTaskDependency = (projectId: string, taskId: string, dependencyId: string) => {
+    setProjects(prevProjects => {
+      return prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            tasks: project.tasks.map(task => {
+              if (task.id === taskId && task.dependsOn) {
+                return {
+                  ...task,
+                  dependsOn: task.dependsOn.filter(id => id !== dependencyId),
+                };
+              }
+              if (task.id === dependencyId && task.blockedBy) {
+                return {
+                  ...task,
+                  blockedBy: task.blockedBy.filter(id => id !== taskId),
+                };
+              }
+              return task;
+            }),
+          };
+        }
+        return project;
+      });
+    });
+  };
+
+  const getUserWorkload = (projectId: string, userId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return { assignedTasks: 0, totalStoryPoints: 0, estimatedHours: 0 };
+    
+    const userTasks = project.tasks.filter(task => 
+      task.assigneeId === userId && task.status !== 'done'
+    );
+    
+    const totalStoryPoints = userTasks.reduce((sum, task) => sum + (task.storyPoints || 0), 0);
+    const estimatedMinutes = userTasks.reduce((sum, task) => sum + (task.estimatedTime || 0), 0);
+    
+    return {
+      assignedTasks: userTasks.length,
+      totalStoryPoints,
+      estimatedHours: Math.round(estimatedMinutes / 60 * 10) / 10,
+    };
+  };
+
+  const getTeamWorkload = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return {};
+    
+    const workload: {
+      [userId: string]: { 
+        assignedTasks: number;
+        totalStoryPoints: number;
+        estimatedHours: number;
+        user: User;
+      }
+    } = {};
+    
+    users.forEach(user => {
+      const userMetrics = getUserWorkload(projectId, user.id);
+      workload[user.id] = {
+        ...userMetrics,
+        user,
+      };
+    });
+    
+    return workload;
+  };
+
+  const updateTaskEstimatedTime = (projectId: string, taskId: string, minutes: number) => {
+    setProjects(prevProjects => {
+      return prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            tasks: project.tasks.map(task => {
+              if (task.id === taskId) {
+                return { ...task, estimatedTime: minutes };
+              }
+              return task;
+            }),
+          };
+        }
+        return project;
+      });
+    });
+  };
+
+  const calculateTaskActualTime = (projectId: string, taskId: string): number => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return 0;
+    
+    const task = project.tasks.find(t => t.id === taskId);
+    if (!task) return 0;
+    
+    const totalMinutes = task.timeRecords.reduce((total, record) => {
+      return total + (record.duration || 0);
+    }, 0);
+    
+    return totalMinutes;
+  };
+
+  const getSprintCapacity = (projectId: string, sprintId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return { totalStoryPoints: 0, assignedStoryPoints: 0, remainingCapacity: 0 };
+    
+    // For simplicity, we'll define a total capacity based on the sprint
+    const sprint = project.sprints.find(s => s.id === sprintId);
+    if (!sprint) return { totalStoryPoints: 0, assignedStoryPoints: 0, remainingCapacity: 0 };
+    
+    // Simple capacity calculation based on sprint name (for demo purposes)
+    const totalStoryPoints = parseInt(sprint.name.replace('Sprint ', '')) * 10;
+    
+    const sprintTasks = project.tasks.filter(t => t.sprintId === sprintId);
+    const assignedStoryPoints = sprintTasks.reduce((sum, task) => sum + (task.storyPoints || 0), 0);
+    
+    return {
+      totalStoryPoints,
+      assignedStoryPoints,
+      remainingCapacity: Math.max(0, totalStoryPoints - assignedStoryPoints),
+    };
+  };
+
+  const addTaskToBoard = (
+    projectId: string,
+    task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords' | 'childTaskIds' | 'dependsOn' | 'blockedBy' | 'estimatedTime' | 'actualTime'>
+  ) => {
+    setProjects(prevProjects => {
+      return prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            tasks: [
+              ...project.tasks,
+              {
+                ...task,
+                id: `task-${Date.now()}`,
+                createdAt: new Date().toISOString(),
+                comments: [],
+                labels: [],
+                timeRecords: [],
+                childTaskIds: [],
+                dependsOn: [],
+                blockedBy: [],
+                estimatedTime: 0,
+                actualTime: 0,
+              },
+            ],
+          };
+        }
+        return project;
+      });
+    });
+  };
+
   const contextValue: ProjectContextType = {
     projects,
     users,
@@ -721,6 +989,16 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     getTasksByEpic,
     getTasksBySprint,
     getCurrentSprint,
+    getTaskDependencies,
+    getTaskBlockers,
+    addTaskDependency,
+    removeTaskDependency,
+    getUserWorkload,
+    getTeamWorkload,
+    updateTaskEstimatedTime,
+    calculateTaskActualTime,
+    getSprintCapacity,
+    addTaskToBoard,
   };
 
   return (
