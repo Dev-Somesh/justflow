@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useProject, TaskStatus, TaskFilters } from '@/contexts/ProjectContext';
+import { useProject, TaskStatus, TaskFilters, TaskPriority } from '@/contexts/ProjectContext';
 import TaskCard from './TaskCard';
 import TaskFiltersComponent from './TaskFilters';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
@@ -46,7 +46,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     if (filters && Object.keys(filters).length > 0) {
       const newFilters: TaskFilters = {};
       
-      if (filters.priority) newFilters.priority = [filters.priority];
+      // Validate the priority is a valid TaskPriority before setting it
+      if (filters.priority && ['low', 'medium', 'high'].includes(filters.priority)) {
+        newFilters.priority = [filters.priority as TaskPriority];
+      }
+      
       if (filters.status) newFilters.status = [filters.status as TaskStatus];
       if (filters.assignee) newFilters.assigneeId = [filters.assignee];
       
