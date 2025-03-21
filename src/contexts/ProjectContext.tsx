@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Types
@@ -73,6 +74,15 @@ export interface Task {
   blockedBy?: string[]; // IDs of tasks blocking this task
   estimatedTime?: number; // in minutes
   actualTime?: number; // in minutes, calculated from time records
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string;
+  tasks: Task[];
+  epics: Epic[];
+  sprints: Sprint[];
 }
 
 // Mock data for labels

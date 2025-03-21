@@ -3,7 +3,7 @@ import React from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import UserAvatar from '@/components/ui/UserAvatar';
 
 interface TeamWorkloadViewProps {
   projectId: string;
