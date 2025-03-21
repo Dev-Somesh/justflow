@@ -2,7 +2,7 @@
 import React from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-interface UserAvatarProps {
+export interface UserAvatarProps {
   src?: string;
   name: string;
   size?: 'sm' | 'md' | 'lg';

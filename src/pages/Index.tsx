@@ -15,11 +15,14 @@ import {
   LucideGitPullRequest,
   CalendarDays,
   Target,
-  Star
+  Star,
+  Users
 } from 'lucide-react';
 import { format } from 'date-fns';
 import SprintBurndownChart from '@/components/dashboard/SprintBurndownChart';
 import VelocityChart from '@/components/dashboard/VelocityChart';
+import TeamWorkloadView from '@/components/dashboard/TeamWorkloadView';
+import RecentActivityWidget from '@/components/dashboard/RecentActivityWidget';
 
 const Index = () => {
   const { projects, setCurrentProject, tasks, currentProject } = useProject();
@@ -63,9 +66,15 @@ const Index = () => {
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-gray-500">Project metrics and management overview</p>
         </div>
-        <Button onClick={() => navigate('/epics')}>
-          View Epics & Roadmap
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/team')}>
+            <Users className="h-4 w-4 mr-2" />
+            Team
+          </Button>
+          <Button onClick={() => navigate('/epics')}>
+            View Epics & Roadmap
+          </Button>
+        </div>
       </div>
       
       {/* Summary Cards */}
@@ -120,119 +129,126 @@ const Index = () => {
         </Card>
       </div>
       
-      {/* Advanced Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-500" />
-              <span>Story Points</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <p className="text-sm text-gray-500">Total</p>
-                <p className="text-3xl font-bold">{totalStoryPoints}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Completed</p>
-                <p className="text-3xl font-bold">{completedStoryPoints}</p>
-                <p className="text-xs text-gray-500">
-                  {totalStoryPoints > 0 
-                    ? Math.round((completedStoryPoints / totalStoryPoints) * 100) 
-                    : 0}% completed
-                </p>
-              </div>
+      {/* Main Dashboard Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Left Column */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Advanced Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Star className="h-5 w-5 text-yellow-500" />
+                  <span>Story Points</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <p className="text-sm text-gray-500">Total</p>
+                    <p className="text-3xl font-bold">{totalStoryPoints}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Completed</p>
+                    <p className="text-3xl font-bold">{completedStoryPoints}</p>
+                    <p className="text-xs text-gray-500">
+                      {totalStoryPoints > 0 
+                        ? Math.round((completedStoryPoints / totalStoryPoints) * 100) 
+                        : 0}% completed
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <LucideGitPullRequest className="h-5 w-5 text-purple-500" />
+                  <span>Current Sprint</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {currentSprint ? (
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-medium">{currentSprint.name}</h3>
+                      <Badge>Active</Badge>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-2">{currentSprint.goal}</p>
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <CalendarDays className="h-3 w-3" />
+                        {format(new Date(currentSprint.startDate), 'MMM d')} - {format(new Date(currentSprint.endDate), 'MMM d, yyyy')}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Target className="h-3 w-3" />
+                        {currentProject 
+                          ? currentProject.tasks.filter(t => t.sprintId === currentSprint.id).length 
+                          : 0} tasks
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">No active sprint</p>
+                    <Button variant="outline" size="sm" className="mt-2">
+                      Start New Sprint
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Charts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sprint Burndown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SprintBurndownChart />
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Team Velocity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <VelocityChart />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Projects */}
+          <div>
+            <h2 className="text-lg font-medium mb-4">Projects</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {projects.map(project => (
+                <ProjectCard 
+                  key={project.id} 
+                  project={project} 
+                  onClick={() => handleProjectClick(project.id)} 
+                />
+              ))}
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <LucideGitPullRequest className="h-5 w-5 text-purple-500" />
-              <span>Current Sprint</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {currentSprint ? (
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-medium">{currentSprint.name}</h3>
-                  <Badge>Active</Badge>
-                </div>
-                <p className="text-sm text-gray-500 mb-2">{currentSprint.goal}</p>
-                <div className="flex justify-between text-xs text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <CalendarDays className="h-3 w-3" />
-                    {format(new Date(currentSprint.startDate), 'MMM d')} - {format(new Date(currentSprint.endDate), 'MMM d, yyyy')}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Target className="h-3 w-3" />
-                    {currentProject 
-                      ? currentProject.tasks.filter(t => t.sprintId === currentSprint.id).length 
-                      : 0} tasks
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-gray-500">No active sprint</p>
-                <Button variant="outline" size="sm" className="mt-2">
-                  Start New Sprint
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Sprint Burndown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SprintBurndownChart />
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Team Velocity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <VelocityChart />
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Task Status Overview */}
-      <div className="mb-8">
-        <h2 className="text-lg font-medium mb-4">Task Status Overview</h2>
-        <div className="flex gap-3">
-          <Badge variant="status-todo" className="gap-1">
-            To Do <span className="bg-white bg-opacity-20 ml-1 px-1 rounded-sm">{todoTasks}</span>
-          </Badge>
-          <Badge variant="status-in-progress" className="gap-1">
-            In Progress <span className="bg-white bg-opacity-20 ml-1 px-1 rounded-sm">{inProgressTasks}</span>
-          </Badge>
-          <Badge variant="status-done" className="gap-1">
-            Done <span className="bg-white bg-opacity-20 ml-1 px-1 rounded-sm">{completedTasks}</span>
-          </Badge>
+          </div>
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map(project => (
-          <ProjectCard 
-            key={project.id} 
-            project={project} 
-            onClick={() => handleProjectClick(project.id)} 
-          />
-        ))}
+        
+        {/* Right Column - Activity & Team */}
+        <div className="space-y-6">
+          {/* Recent Activity Widget */}
+          {currentProject && (
+            <RecentActivityWidget projectId={currentProject.id} limit={8} />
+          )}
+          
+          {/* Team Workload Summary */}
+          {currentProject && (
+            <TeamWorkloadView projectId={currentProject.id} />
+          )}
+        </div>
       </div>
     </AppLayout>
   );
