@@ -11,6 +11,12 @@ interface KanbanBoardProps {
   projectId: string;
   onTaskClick: (taskId: string) => void;
   onAddTask: (status: TaskStatus) => void;
+  filters?: {
+    priority?: string;
+    status?: string;
+    assignee?: string;
+    taskId?: string;
+  };
 }
 
 interface ColumnConfig {
@@ -28,11 +34,27 @@ const columns: ColumnConfig[] = [
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ 
   projectId, 
   onTaskClick,
-  onAddTask 
+  onAddTask,
+  filters = {} 
 }) => {
   const { getTasksByStatus, updateTaskStatus, filterTasks } = useProject();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<TaskFilters>({});
+
+  // Apply external filters when they change
+  React.useEffect(() => {
+    if (filters && Object.keys(filters).length > 0) {
+      const newFilters: TaskFilters = {};
+      
+      if (filters.priority) newFilters.priority = [filters.priority];
+      if (filters.status) newFilters.status = [filters.status as TaskStatus];
+      if (filters.assignee) newFilters.assigneeId = [filters.assignee];
+      
+      setActiveFilters(newFilters);
+    } else {
+      setActiveFilters({});
+    }
+  }, [filters]);
 
   const handleFilterChange = (query: string, filters: TaskFilters) => {
     setSearchQuery(query);
