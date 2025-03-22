@@ -19,6 +19,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Inter', 'sans-serif'],
+				mono: ['JetBrains Mono', 'monospace'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -64,19 +68,18 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				// Custom colors for our project
-				plane: {
-					purple: {
-						light: '#9b87f5',
-						DEFAULT: '#7E69AB',
-						dark: '#6E59A5',
-					},
-					blue: '#0EA5E9',
-					orange: '#F97316',
-					gray: {
-						light: '#F6F6F7',
-						DEFAULT: '#8E9196',
-						dark: '#403E43',
-					}
+				blue: {
+					DEFAULT: '#3B82F6',
+					50: '#EBF2FF',
+					100: '#DBEAFE',
+					200: '#BFDBFE',
+					300: '#93C5FD',
+					400: '#60A5FA',
+					500: '#3B82F6',
+					600: '#2563EB',
+					700: '#1D4ED8',
+					800: '#1E40AF',
+					900: '#1E3A8A',
 				},
 				priority: {
 					high: '#F97316',

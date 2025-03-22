@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProject } from '@/contexts/ProjectContext';
+import Logo from '@/components/ui/Logo';
 
 const AppHeader = () => {
   const navigate = useNavigate();
@@ -68,7 +69,10 @@ const AppHeader = () => {
   return (
     <header className="bg-white border-b border-gray-200 flex items-center justify-between px-4 h-14">
       <div className="flex items-center gap-2">
-        <div className="font-bold text-xl text-plane-purple">Quantum PMS</div>
+        <div className="flex items-center">
+          <Logo size="sm" />
+          <div className="font-semibold text-xl text-blue-600 font-mono ml-2">JustFlow</div>
+        </div>
         {currentProject && (
           <div className="text-sm text-gray-500 hidden md:block">
             / {currentProject.name}

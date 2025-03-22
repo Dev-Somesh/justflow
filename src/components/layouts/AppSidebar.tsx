@@ -19,6 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useProject } from '@/contexts/ProjectContext';
 import UserAvatar from '@/components/ui/UserAvatar';
 import AdminPanel from '@/components/admin/AdminPanel';
+import Logo from '@/components/ui/Logo';
 
 const AppSidebar = () => {
   const navigate = useNavigate();
@@ -65,7 +66,10 @@ const AppSidebar = () => {
   return (
     <div className="w-64 border-r border-gray-200 bg-white h-full flex flex-col">
       <div className="p-4 border-b border-gray-200">
-        <h1 className="text-lg font-bold text-plane-purple">Quantum PMS</h1>
+        <div className="flex items-center mb-2">
+          <Logo size="sm" />
+          <h1 className="text-lg font-semibold font-mono text-blue-600 ml-2">JustFlow</h1>
+        </div>
         {currentProject && (
           <p className="text-sm text-gray-500 mt-1 truncate">{currentProject.name}</p>
         )}
@@ -149,7 +153,7 @@ const AppSidebar = () => {
             <p className="text-sm font-medium">{currentUser.name}</p>
             <p className="text-xs text-gray-500 truncate">{currentUser.role}</p>
           </div>
-          <Shield className="h-5 w-5 text-plane-purple" />
+          <Shield className="h-5 w-5 text-blue-600" />
         </div>
       </div>
       
