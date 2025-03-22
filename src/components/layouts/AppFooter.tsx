@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { GitHub, Linkedin, Mail } from 'lucide-react';
+import { Github, Linkedin, Mail } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 
 const AppFooter: React.FC = () => {
@@ -31,7 +31,7 @@ const AppFooter: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <GitHub className="h-4 w-4" />
+                <Github className="h-4 w-4" />
               </a>
               <a 
                 href="https://www.linkedin.com/in/ersomeshbhardwaj/" 
