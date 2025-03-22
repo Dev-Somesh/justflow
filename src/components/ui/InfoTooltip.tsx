@@ -23,7 +23,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, size = 'sm' }) => {
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
+        <TooltipTrigger>
           <div className="inline-flex cursor-help">
             <HelpCircle className={`${sizeClasses[size]} text-gray-400 hover:text-gray-600`} />
           </div>
