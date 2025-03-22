@@ -95,7 +95,7 @@ const AppHeader = () => {
         <div className="flex items-center ml-4 gap-2">
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger>
                 <Button variant="outline" size="icon" className="relative" onClick={() => navigate('/board?priority=high')}>
                   <AlertTriangle className="h-5 w-5 text-amber-500" />
                   {highPriorityCount > 0 && (
@@ -104,16 +104,16 @@ const AppHeader = () => {
                     </span>
                   )}
                 </Button>
-                <TooltipContent>
-                  <p>High Priority Tasks</p>
-                </TooltipContent>
               </TooltipTrigger>
+              <TooltipContent>
+                <p>High Priority Tasks</p>
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
           
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger>
                 <Button variant="outline" size="icon" className="relative" onClick={() => navigate('/board?status=in-progress')}>
                   <Clock className="h-5 w-5 text-blue-500" />
                   {pendingTasksCount > 0 && (
@@ -122,23 +122,23 @@ const AppHeader = () => {
                     </span>
                   )}
                 </Button>
-                <TooltipContent>
-                  <p>Pending Tasks</p>
-                </TooltipContent>
               </TooltipTrigger>
+              <TooltipContent>
+                <p>Pending Tasks</p>
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
           
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger>
                 <Button variant="outline" size="icon" onClick={() => window.open('https://docs.example.com/help', '_blank')}>
                   <HelpCircle className="h-5 w-5 text-gray-500" />
                 </Button>
-                <TooltipContent>
-                  <p>Help & Documentation</p>
-                </TooltipContent>
               </TooltipTrigger>
+              <TooltipContent>
+                <p>Help & Documentation</p>
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
