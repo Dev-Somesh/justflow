@@ -4,6 +4,15 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Progress } from "@/components/ui/progress";
 import UserAvatar from '@/components/ui/UserAvatar';
 import { Project, useProject } from '@/contexts/ProjectContext';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { format, isAfter, isBefore, differenceInDays } from 'date-fns';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ProjectCardProps {
   project: Project;
@@ -22,13 +31,63 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
   const assigneeIds = [...new Set(project.tasks.map(task => task.assigneeId).filter(Boolean))];
   const assignees = assigneeIds.map(id => getUserById(id!)).filter(Boolean);
   
+  // Get active sprint if any
+  const activeSprint = project.sprints.find(sprint => sprint.status === 'active');
+  
+  // Calculate sprint status if active
+  let sprintStatus: {color: string, label: string} | null = null;
+  
+  if (activeSprint) {
+    const today = new Date();
+    const startDate = new Date(activeSprint.startDate);
+    const endDate = new Date(activeSprint.endDate);
+    
+    if (isBefore(today, startDate)) {
+      sprintStatus = { color: 'bg-blue-400', label: 'Not Started' };
+    } else if (isAfter(today, endDate)) {
+      sprintStatus = { color: 'bg-red-400', label: 'Overdue' };
+    } else {
+      const totalDays = differenceInDays(endDate, startDate) || 1;
+      const daysElapsed = differenceInDays(today, startDate) || 0;
+      const progressPercentage = Math.min(Math.round((daysElapsed / totalDays) * 100), 100);
+      
+      if (progressPercentage > 75) {
+        sprintStatus = { color: 'bg-amber-400', label: 'Ending Soon' };
+      } else {
+        sprintStatus = { color: 'bg-green-400', label: 'In Progress' };
+      }
+    }
+  }
+
+  // Count high priority tasks
+  const highPriorityTasks = project.tasks.filter(task => task.priority === 'high').length;
+  
   return (
     <Card 
       className="hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
       onClick={onClick}
     >
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{project.name}</CardTitle>
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-lg">{project.name}</CardTitle>
+          {activeSprint && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className={`${sprintStatus?.color} text-white`}>
+                    Sprint
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Sprint: {activeSprint.name} ({sprintStatus?.label})</p>
+                  <p className="text-xs text-gray-400">
+                    {format(new Date(activeSprint.startDate), 'MMM d')} - {format(new Date(activeSprint.endDate), 'MMM d')}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="pb-2">
         <p className="text-sm text-gray-500 mb-4 line-clamp-2">{project.description}</p>
@@ -61,6 +120,30 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
             </div>
           </div>
         </div>
+        
+        {/* Additional metrics section */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {highPriorityTasks > 0 && (
+            <div className="bg-red-50 text-red-600 rounded-full px-2 py-1 text-xs flex items-center">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              {highPriorityTasks} high priority
+            </div>
+          )}
+          
+          {activeSprint && (
+            <div className="bg-blue-50 text-blue-600 rounded-full px-2 py-1 text-xs flex items-center">
+              <Clock className="h-3 w-3 mr-1" />
+              {format(new Date(activeSprint.endDate), 'MMM d')}
+            </div>
+          )}
+          
+          {progress === 100 && (
+            <div className="bg-green-50 text-green-600 rounded-full px-2 py-1 text-xs flex items-center">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Completed
+            </div>
+          )}
+        </div>
       </CardContent>
       <CardFooter className="pt-2 flex justify-between">
         <div className="flex -space-x-2">
@@ -75,8 +158,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
             </div>
           )}
         </div>
-        <div className="text-xs text-gray-500">
-          Updated {new Date().toLocaleDateString()}
+        <div className="text-xs text-gray-500 flex items-center">
+          <Calendar className="h-3 w-3 mr-1" />
+          {format(new Date(), 'MMM d, yyyy')}
         </div>
       </CardFooter>
     </Card>

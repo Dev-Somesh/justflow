@@ -4,8 +4,11 @@ import { useProject, TaskStatus, TaskFilters, TaskPriority } from '@/contexts/Pr
 import TaskCard from './TaskCard';
 import TaskFiltersComponent from './TaskFilters';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCcw, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 interface KanbanBoardProps {
   projectId: string;
@@ -37,9 +40,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onAddTask,
   filters = {} 
 }) => {
+  const { toast } = useToast();
   const { getTasksByStatus, updateTaskStatus, filterTasks } = useProject();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<TaskFilters>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   // Apply external filters when they change
   React.useEffect(() => {
@@ -81,12 +87,46 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       return;
     }
 
-    // Update task status
-    updateTaskStatus(
-      projectId,
-      draggableId,
-      destination.droppableId as TaskStatus
-    );
+    // Show loading feedback
+    setIsLoading(true);
+
+    try {
+      // Update task status
+      updateTaskStatus(
+        projectId,
+        draggableId,
+        destination.droppableId as TaskStatus
+      );
+      
+      // Show success toast
+      toast({
+        title: "Task updated",
+        description: `Task moved to ${destination.droppableId.replace('-', ' ')}`,
+      });
+    } catch (error) {
+      console.error("Failed to update task status:", error);
+      setHasError(true);
+      
+      // Show error toast
+      toast({
+        title: "Failed to update task",
+        description: "There was an error updating the task. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRetry = () => {
+    setHasError(false);
+    // Refresh data by triggering a re-render
+    setActiveFilters({...activeFilters});
+    
+    toast({
+      title: "Refreshing board",
+      description: "Attempting to reload board data...",
+    });
   };
 
   // Get tasks for each column, applying filters if any
@@ -99,6 +139,22 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
     return getTasksByStatus(projectId, status);
   };
+
+  if (hasError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+        <h3 className="text-lg font-medium mb-2">Failed to load board data</h3>
+        <p className="text-gray-500 mb-4 text-center max-w-md">
+          There was an error loading the board. This could be due to a connection issue or server error.
+        </p>
+        <Button onClick={handleRetry} className="flex items-center gap-2">
+          <RefreshCcw className="h-4 w-4" />
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -137,23 +193,50 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       ref={provided.innerRef}
                       className="bg-gray-50 rounded-md p-3 min-h-[300px] flex-1"
                     >
-                      {tasks.map((task, index) => (
-                        <Draggable key={task.id} draggableId={task.id} index={index}>
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                            >
-                              <TaskCard 
-                                task={task} 
-                                onClick={() => onTaskClick(task.id)} 
-                              />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {tasks.length === 0 && (
+                      {isLoading ? (
+                        // Loading skeletons
+                        [...Array(3)].map((_, index) => (
+                          <Card key={`skeleton-${index}`} className="mb-3 border border-gray-200">
+                            <CardContent className="p-3">
+                              <div className="flex items-start gap-2 mb-2">
+                                <Skeleton className="w-1 h-16 rounded-full" />
+                                <div className="flex-1">
+                                  <Skeleton className="h-4 w-3/4 mb-2" />
+                                  <Skeleton className="h-4 w-1/2" />
+                                </div>
+                              </div>
+                              <Skeleton className="h-3 w-full mt-2" />
+                              <Skeleton className="h-3 w-4/5 mt-1" />
+                              
+                              <div className="flex justify-between items-center mt-4">
+                                <Skeleton className="h-6 w-6 rounded-full" />
+                                <div className="flex gap-2">
+                                  <Skeleton className="h-4 w-10" />
+                                  <Skeleton className="h-4 w-8" />
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      ) : (
+                        tasks.map((task, index) => (
+                          <Draggable key={task.id} draggableId={task.id} index={index}>
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                              >
+                                <TaskCard 
+                                  task={task} 
+                                  onClick={() => onTaskClick(task.id)} 
+                                />
+                              </div>
+                            )}
+                          </Draggable>
+                        ))
+                      )}
+                      {!isLoading && tasks.length === 0 && (
                         <div className="flex items-center justify-center h-full">
                           <p className="text-sm text-gray-400">No tasks</p>
                         </div>
