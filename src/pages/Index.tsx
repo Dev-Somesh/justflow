@@ -26,7 +26,7 @@ import RecentActivityWidget from '@/components/dashboard/RecentActivityWidget';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 
 const Index = () => {
-  const { projects, setCurrentProject, tasks, currentProject } = useProject();
+  const { projects, setCurrentProject, currentProject } = useProject();
   const navigate = useNavigate();
 
   const handleProjectClick = (projectId: string) => {
@@ -37,12 +37,13 @@ const Index = () => {
     }
   };
   
-  // Calculate statistics
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(task => task.status === 'done').length;
-  const inProgressTasks = tasks.filter(task => task.status === 'in-progress').length;
-  const todoTasks = tasks.filter(task => task.status === 'todo').length;
-  const highPriorityTasks = tasks.filter(task => task.priority === 'high').length;
+  // Calculate statistics only for the current project
+  const projectTasks = currentProject ? currentProject.tasks : [];
+  const totalTasks = projectTasks.length;
+  const completedTasks = projectTasks.filter(task => task.status === 'done').length;
+  const inProgressTasks = projectTasks.filter(task => task.status === 'in-progress').length;
+  const todoTasks = projectTasks.filter(task => task.status === 'todo').length;
+  const highPriorityTasks = projectTasks.filter(task => task.priority === 'high').length;
   
   // Calculate completion percentage
   const completionPercentage = totalTasks > 0 
@@ -50,8 +51,8 @@ const Index = () => {
     : 0;
 
   // Calculate story points statistics
-  const totalStoryPoints = tasks.reduce((total, task) => total + (task.storyPoints || 0), 0);
-  const completedStoryPoints = tasks
+  const totalStoryPoints = projectTasks.reduce((total, task) => total + (task.storyPoints || 0), 0);
+  const completedStoryPoints = projectTasks
     .filter(task => task.status === 'done')
     .reduce((total, task) => total + (task.storyPoints || 0), 0);
   
