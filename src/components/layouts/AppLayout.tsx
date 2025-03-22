@@ -3,14 +3,14 @@ import React from 'react';
 import AppHeader from './AppHeader';
 import AppSidebar from './AppSidebar';
 import AppFooter from './AppFooter';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 const AppLayout = ({ children }: AppLayoutProps) => {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   
   return (
     <div className="flex flex-col min-h-screen">
