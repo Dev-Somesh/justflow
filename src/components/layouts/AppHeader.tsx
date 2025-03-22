@@ -136,7 +136,7 @@ const AppHeader = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <Button variant="outline" size="icon" onClick={() => window.open('https://docs.example.com/help', '_blank')}>
+                <Button variant="outline" size="icon" onClick={() => navigate('/help')}>
                   <HelpCircle className="h-5 w-5 text-gray-500" />
                 </Button>
               </TooltipTrigger>
