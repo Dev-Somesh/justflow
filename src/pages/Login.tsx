@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import Logo from '@/components/ui/Logo';
-import { EyeIcon, EyeOffIcon, LogOut } from 'lucide-react';
+import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import AppFooter from '@/components/layouts/AppFooter';
+import { Link } from 'react-router-dom';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -48,28 +49,26 @@ const Login = () => {
   const toggleShowPassword = () => setShowPassword(!showPassword);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-r from-blue-50 to-indigo-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-r from-blue-50 to-indigo-100">
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white">
+      <header className="border-b border-gray-200 bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div 
-            className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => navigate('/')}
-          >
+          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
             <Logo size="sm" />
             <span className="font-mono font-semibold text-xl text-blue-600 ml-2">JustFlow</span>
-          </div>
+          </Link>
           <div className="flex items-center space-x-6">
-            <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
-            <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Pricing</a>
-            <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Documentation</a>
+            <Link to="/about" className="text-gray-600 hover:text-blue-600 transition-colors">About</Link>
+            <Link to="/faqs" className="text-gray-600 hover:text-blue-600 transition-colors">FAQs</Link>
+            <Link to="/guides" className="text-gray-600 hover:text-blue-600 transition-colors">Guides</Link>
+            <Link to="/api-docs" className="text-gray-600 hover:text-blue-600 transition-colors">API</Link>
           </div>
         </div>
       </header>
       
       {/* Main content */}
-      <div className="flex-grow flex justify-center items-center p-4">
-        <Card className="w-full max-w-md shadow-lg border-0">
+      <div className="flex-grow flex justify-center items-center p-4 bg-[url('/pattern-bg.svg')] bg-cover bg-center">
+        <Card className="w-full max-w-md shadow-lg border-0 backdrop-blur-sm bg-white/90">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
             <CardDescription>
@@ -116,9 +115,9 @@ const Login = () => {
                 <div className="text-sm text-muted-foreground">
                   Demo: Use "admin" and "admin"
                 </div>
-                <a href="#" className="text-sm text-blue-600 hover:underline">
+                <Link to="/guides" className="text-sm text-blue-600 hover:underline">
                   Forgot password?
-                </a>
+                </Link>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Logging in..." : "Login"}
@@ -128,9 +127,9 @@ const Login = () => {
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-center w-full">
               <span className="text-sm text-muted-foreground">Don't have an account? </span>
-              <a href="#" className="text-sm text-blue-600 hover:underline">
+              <Link to="/guides" className="text-sm text-blue-600 hover:underline">
                 Sign up
-              </a>
+              </Link>
             </div>
           </CardFooter>
         </Card>

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Types
@@ -11,6 +10,7 @@ export interface User {
   avatar: string;
   email: string;
   role: string;
+  roles?: string[];
 }
 
 export interface Comment {
@@ -68,12 +68,12 @@ export interface Task {
   epicId?: string;
   sprintId?: string;
   storyPoints?: number;
-  parentTaskId?: string; // For sub-tasks
-  childTaskIds?: string[]; // For parent-child relationships
-  dependsOn?: string[]; // IDs of tasks this task depends on
-  blockedBy?: string[]; // IDs of tasks blocking this task
-  estimatedTime?: number; // in minutes
-  actualTime?: number; // in minutes, calculated from time records
+  parentTaskId?: string;
+  childTaskIds?: string[];
+  dependsOn?: string[];
+  blockedBy?: string[];
+  estimatedTime?: number;
+  actualTime?: number;
 }
 
 export interface Project {
@@ -94,6 +94,14 @@ const defaultLabels: TaskLabel[] = [
   { id: 'label-5', name: 'Improvement', color: '#FBBF24' },
 ];
 
+// Helper function to generate random date in 2025 (Jan-Mar)
+const getRandomDate2025 = () => {
+  const start = new Date(2025, 0, 1); // Jan 1, 2025
+  const end = new Date(2025, 2, 31); // Mar 31, 2025
+  const randomDate = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+  return randomDate.toISOString();
+};
+
 // Mock epics
 const mockEpics: Epic[] = [
   {
@@ -102,7 +110,7 @@ const mockEpics: Epic[] = [
     description: 'Implement secure user authentication and authorization',
     color: '#8B5CF6',
     status: 'active',
-    createdAt: '2023-05-15T08:00:00Z',
+    createdAt: getRandomDate2025(),
   },
   {
     id: 'epic-2',
@@ -110,7 +118,7 @@ const mockEpics: Epic[] = [
     description: 'Create comprehensive reporting dashboard for project metrics',
     color: '#EC4899',
     status: 'active',
-    createdAt: '2023-05-20T10:30:00Z',
+    createdAt: getRandomDate2025(),
   }
 ];
 
@@ -120,16 +128,16 @@ const mockSprints: Sprint[] = [
     id: 'sprint-1',
     name: 'Sprint 1',
     goal: 'Complete initial website mockups and authentication flow',
-    startDate: '2023-06-01T00:00:00Z',
-    endDate: '2023-06-15T23:59:59Z',
+    startDate: '2025-01-01T00:00:00Z',
+    endDate: '2025-01-15T23:59:59Z',
     status: 'completed',
   },
   {
     id: 'sprint-2',
     name: 'Sprint 2',
     goal: 'Implement responsive navigation and optimize performance',
-    startDate: '2023-06-16T00:00:00Z',
-    endDate: '2023-06-30T23:59:59Z',
+    startDate: '2025-01-16T00:00:00Z',
+    endDate: '2025-01-31T23:59:59Z',
     status: 'active',
   }
 ];
@@ -141,21 +149,24 @@ const mockUsers: User[] = [
     name: 'Alex Johnson', 
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
     email: 'alex@example.com',
-    role: 'Product Manager'
+    role: 'Product Manager',
+    roles: ['Product Manager', 'Admin']
   },
   { 
     id: 'user-2', 
     name: 'Sarah Miller', 
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
     email: 'sarah@example.com',
-    role: 'UI Designer'
+    role: 'UI Designer',
+    roles: ['UI Designer', 'UX Designer']
   },
   { 
     id: 'user-3', 
     name: 'Jamie Smith', 
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jamie',
     email: 'jamie@example.com',
-    role: 'Developer'
+    role: 'Developer',
+    roles: ['Developer', 'QA Tester']
   },
 ];
 
@@ -172,18 +183,18 @@ const mockProjects: Project[] = [
         status: 'todo',
         priority: 'high',
         assigneeId: 'user-1',
-        createdAt: '2023-06-01T10:00:00Z',
+        createdAt: getRandomDate2025(),
         comments: [
           {
             id: 'comment-1',
             userId: 'user-2',
             content: 'I think we should use a hero image at the top',
-            createdAt: '2023-06-02T14:30:00Z',
+            createdAt: getRandomDate2025(),
           }
         ],
         labels: [{ id: 'label-4', name: 'Design', color: '#A78BFA' }],
         timeRecords: [],
-        dueDate: '2023-06-10T23:59:59Z',
+        dueDate: '2025-02-10T23:59:59Z',
         epicId: 'epic-1',
         sprintId: 'sprint-1',
         storyPoints: 5,
@@ -195,20 +206,20 @@ const mockProjects: Project[] = [
         status: 'in-progress',
         priority: 'medium',
         assigneeId: 'user-3',
-        createdAt: '2023-06-03T09:15:00Z',
+        createdAt: getRandomDate2025(),
         comments: [],
         labels: [{ id: 'label-2', name: 'Feature', color: '#60A5FA' }],
         timeRecords: [
           {
             id: 'time-1',
             userId: 'user-3',
-            startTime: '2023-06-04T10:00:00Z',
-            endTime: '2023-06-04T12:30:00Z',
+            startTime: '2025-01-04T10:00:00Z',
+            endTime: '2025-01-04T12:30:00Z',
             duration: 150,
             note: 'Started implementation of the responsive navbar',
           }
         ],
-        dueDate: '2023-06-15T23:59:59Z',
+        dueDate: '2025-02-15T23:59:59Z',
         epicId: 'epic-1',
         sprintId: 'sprint-1',
         storyPoints: 3,
@@ -221,7 +232,7 @@ const mockProjects: Project[] = [
         status: 'done',
         priority: 'low',
         assigneeId: 'user-2',
-        createdAt: '2023-06-05T11:45:00Z',
+        createdAt: getRandomDate2025(),
         comments: [],
         labels: [{ id: 'label-5', name: 'Improvement', color: '#FBBF24' }],
         timeRecords: [],
@@ -236,7 +247,7 @@ const mockProjects: Project[] = [
         status: 'todo',
         priority: 'medium',
         assigneeId: 'user-3',
-        createdAt: '2023-06-05T11:45:00Z',
+        createdAt: getRandomDate2025(),
         comments: [],
         labels: [{ id: 'label-2', name: 'Feature', color: '#60A5FA' }],
         timeRecords: [],
@@ -251,16 +262,16 @@ const mockProjects: Project[] = [
         status: 'todo',
         priority: 'medium',
         assigneeId: 'user-2',
-        createdAt: '2023-06-07T14:30:00Z',
+        createdAt: getRandomDate2025(),
         comments: [],
         labels: [{ id: 'label-3', name: 'Documentation', color: '#34D399' }],
         timeRecords: [],
-        dueDate: '2023-06-25T23:59:59Z',
+        dueDate: '2025-02-25T23:59:59Z',
         epicId: 'epic-1',
         sprintId: 'sprint-2',
         storyPoints: 5,
         dependsOn: ['task-1'],
-        estimatedTime: 480, // 8 hours
+        estimatedTime: 480,
       },
       {
         id: 'task-7',
@@ -269,16 +280,16 @@ const mockProjects: Project[] = [
         status: 'todo',
         priority: 'high',
         assigneeId: 'user-1',
-        createdAt: '2023-06-08T09:45:00Z',
+        createdAt: getRandomDate2025(),
         comments: [],
         labels: [{ id: 'label-5', name: 'Improvement', color: '#FBBF24' }],
         timeRecords: [],
-        dueDate: '2023-06-30T23:59:59Z',
+        dueDate: '2025-03-15T23:59:59Z',
         epicId: 'epic-2',
         sprintId: 'sprint-2',
         storyPoints: 3,
         blockedBy: ['task-6'],
-        estimatedTime: 360, // 6 hours
+        estimatedTime: 360,
       }
     ],
     epics: mockEpics,
@@ -296,11 +307,11 @@ const mockProjects: Project[] = [
         status: 'todo',
         priority: 'medium',
         assigneeId: 'user-1',
-        createdAt: '2023-06-10T08:30:00Z',
+        createdAt: getRandomDate2025(),
         comments: [],
         labels: [{ id: 'label-4', name: 'Design', color: '#A78BFA' }],
         timeRecords: [],
-        dueDate: '2023-06-20T23:59:59Z',
+        dueDate: '2025-02-20T23:59:59Z',
         sprintId: 'sprint-2',
         storyPoints: 3,
       },
@@ -311,7 +322,7 @@ const mockProjects: Project[] = [
         status: 'in-progress',
         priority: 'high',
         assigneeId: 'user-3',
-        createdAt: '2023-06-12T13:20:00Z',
+        createdAt: getRandomDate2025(),
         comments: [],
         labels: [{ id: 'label-3', name: 'Documentation', color: '#34D399' }],
         timeRecords: [],
@@ -345,6 +356,7 @@ interface ProjectContextType {
   getEpics: (projectId: string) => Epic[];
   getSprints: (projectId: string) => Sprint[];
   addEpic: (projectId: string, epic: Omit<Epic, 'id' | 'createdAt'>) => void;
+  updateEpic: (projectId: string, epicId: string, updates: Partial<Epic>) => void;
   addSprint: (projectId: string, sprint: Omit<Sprint, 'id'>) => void;
   addTaskToSprint: (projectId: string, taskId: string, sprintId: string) => void;
   addTaskToEpic: (projectId: string, taskId: string, epicId: string) => void;
@@ -378,6 +390,7 @@ interface ProjectContextType {
     remainingCapacity: number;
   };
   addTaskToBoard: (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords' | 'childTaskIds' | 'dependsOn' | 'blockedBy' | 'estimatedTime' | 'actualTime'>) => void;
+  assignRolesToUser: (userId: string, roles: string[]) => void;
 }
 
 // Task filters type
@@ -398,7 +411,7 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 // Provider component
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const [projects, setProjects] = useState<Project[]>(mockProjects);
-  const [users] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>(mockUsers);
   const [currentProject, setCurrentProject] = useState<Project | null>(mockProjects[0] || null);
   const [availableLabels] = useState<TaskLabel[]>(defaultLabels);
 
@@ -425,6 +438,40 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
           };
         }
         return project;
+      });
+    });
+  };
+
+  const updateEpic = (projectId: string, epicId: string, updates: Partial<Epic>) => {
+    setProjects(prevProjects => {
+      return prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            epics: project.epics.map(epic => {
+              if (epic.id === epicId) {
+                return { ...epic, ...updates };
+              }
+              return epic;
+            }),
+          };
+        }
+        return project;
+      });
+    });
+  };
+
+  const assignRolesToUser = (userId: string, roles: string[]) => {
+    setUsers(prevUsers => {
+      return prevUsers.map(user => {
+        if (user.id === userId) {
+          return {
+            ...user,
+            roles,
+            role: roles[0] || user.role,
+          };
+        }
+        return user;
       });
     });
   };
@@ -991,6 +1038,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     getEpics,
     getSprints,
     addEpic,
+    updateEpic,
     addSprint,
     addTaskToSprint,
     addTaskToEpic,
@@ -1009,6 +1057,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     calculateTaskActualTime,
     getSprintCapacity,
     addTaskToBoard,
+    assignRolesToUser,
   };
 
   return (
@@ -1026,4 +1075,3 @@ export const useProject = () => {
   }
   return context;
 };
-

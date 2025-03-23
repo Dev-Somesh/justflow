@@ -1,0 +1,38 @@
+
+<svg width="1440" height="1024" viewBox="0 0 1440 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g opacity="0.15">
+    <circle cx="196" cy="105" r="5" fill="#4F46E5"/>
+    <circle cx="396" cy="205" r="5" fill="#4F46E5"/>
+    <circle cx="596" cy="105" r="5" fill="#4F46E5"/>
+    <circle cx="796" cy="205" r="5" fill="#4F46E5"/>
+    <circle cx="996" cy="105" r="5" fill="#4F46E5"/>
+    <circle cx="1196" cy="205" r="5" fill="#4F46E5"/>
+    <circle cx="196" cy="305" r="5" fill="#4F46E5"/>
+    <circle cx="396" cy="405" r="5" fill="#4F46E5"/>
+    <circle cx="596" cy="305" r="5" fill="#4F46E5"/>
+    <circle cx="796" cy="405" r="5" fill="#4F46E5"/>
+    <circle cx="996" cy="305" r="5" fill="#4F46E5"/>
+    <circle cx="1196" cy="405" r="5" fill="#4F46E5"/>
+    <circle cx="196" cy="505" r="5" fill="#4F46E5"/>
+    <circle cx="396" cy="605" r="5" fill="#4F46E5"/>
+    <circle cx="596" cy="505" r="5" fill="#4F46E5"/>
+    <circle cx="796" cy="605" r="5" fill="#4F46E5"/>
+    <circle cx="996" cy="505" r="5" fill="#4F46E5"/>
+    <circle cx="1196" cy="605" r="5" fill="#4F46E5"/>
+    <circle cx="196" cy="705" r="5" fill="#4F46E5"/>
+    <circle cx="396" cy="805" r="5" fill="#4F46E5"/>
+    <circle cx="596" cy="705" r="5" fill="#4F46E5"/>
+    <circle cx="796" cy="805" r="5" fill="#4F46E5"/>
+    <circle cx="996" cy="705" r="5" fill="#4F46E5"/>
+    <circle cx="1196" cy="805" r="5" fill="#4F46E5"/>
+  </g>
+  <g opacity="0.1">
+    <path d="M0 0H1440V1024H0V0Z" fill="url(#paint0_linear_12_123)"/>
+  </g>
+  <defs>
+    <linearGradient id="paint0_linear_12_123" x1="720" y1="0" x2="720" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#4F46E5" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>
