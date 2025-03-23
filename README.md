@@ -4,6 +4,10 @@
 
 JustFlow is a powerful and flexible workflow automation tool designed to streamline and optimize your business processes. With JustFlow, you can easily create, manage, and execute workflows to improve efficiency and productivity.
 
+## Live Preview
+
+Check out the live preview of the project [(https://justflow.lovable.app/)](https://justflow.lovable.app/).
+
 ## Features
 
 - **Visual Workflow Builder**: Design and edit workflows using an intuitive drag-and-drop interface.
