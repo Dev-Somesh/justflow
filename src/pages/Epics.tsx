@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import AppLayout from '@/components/layouts/AppLayout';
 import { useProject, Epic, Task } from '@/contexts/ProjectContext';
@@ -152,11 +151,9 @@ const Epics = () => {
     });
   };
   
-  // Get unassigned tasks or tasks from other epics that can be assigned
   const getAvailableTasks = () => {
     if (!currentProject) return [];
     
-    // Get all tasks that are not already assigned to this epic
     return allTasks.filter(task => 
       task.epicId !== currentEpicForTasks && 
       task.projectId === currentProject.id
@@ -250,7 +247,6 @@ const Epics = () => {
         </Dialog>
       </div>
       
-      {/* Edit Epic Dialog */}
       <Dialog open={isEditEpicDialogOpen} onOpenChange={setIsEditEpicDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -301,7 +297,7 @@ const Epics = () => {
               </label>
               <Select
                 value={editEpicData.status}
-                onValueChange={(value) => setEditEpicData({ ...editEpicData, status: value as 'active' | 'completed' })}
+                onValueChange={(value: 'active' | 'completed') => setEditEpicData({ ...editEpicData, status: value })}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select status" />
@@ -324,7 +320,6 @@ const Epics = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Assign Task Dialog */}
       <Dialog open={isAssignTaskDialogOpen} onOpenChange={setIsAssignTaskDialogOpen}>
         <DialogContent>
           <DialogHeader>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -26,7 +25,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { TaskPriority, TaskStatus, useProject } from '@/contexts/ProjectContext';
-import { CalendarIcon, Tag, Target, Sprint } from "lucide-react";
+import { CalendarIcon, Tag, Target, Timer } from "lucide-react";
 import { format } from "date-fns";
 
 interface NewTaskModalProps {
@@ -92,9 +91,8 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
       return;
     }
     
-    // Create the new task
     const newTask = {
-      id: `task-${Date.now()}`, // This will be overwritten by the context
+      id: `task-${Date.now()}`,
       title,
       description,
       priority,
@@ -107,11 +105,9 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
     };
     
     try {
-      // Add the task
       addTask(projectId, newTask);
       
-      // Add labels to the new task
-      const newTaskId = `task-${Date.now()}`; // This is an approximation, the actual ID might be different
+      const newTaskId = `task-${Date.now()}`;
       selectedLabels.forEach(labelId => {
         addLabelToTask(projectId, newTaskId, labelId);
       });
@@ -301,6 +297,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                   {sprints.map(sprint => (
                     <SelectItem key={sprint.id} value={sprint.id}>
                       <div className="flex items-center gap-2">
+                        <Timer size={14} className="text-gray-500" />
                         {sprint.name} ({sprint.status})
                       </div>
                     </SelectItem>
