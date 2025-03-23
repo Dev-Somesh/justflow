@@ -85,6 +85,8 @@ export interface Project {
   tasks: Task[];
   sprints: Sprint[];
   epics: Epic[];
+  dueDate?: string; // Added to fix error
+  team?: User[]; // Added to fix error
 }
 
 export interface UserWorkload {
@@ -164,6 +166,30 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
       tasks: [],
       sprints: [],
       epics: [],
+      dueDate: '2024-02-01',
+      team: [
+        {
+          id: 'user-1',
+          name: 'John Doe',
+          email: 'john@example.com',
+          avatar: 'https://i.pravatar.cc/150?img=1',
+          role: 'Developer',
+        },
+        {
+          id: 'user-2',
+          name: 'Jane Smith',
+          email: 'jane@example.com',
+          avatar: 'https://i.pravatar.cc/150?img=2',
+          role: 'Designer',
+        },
+        {
+          id: 'user-3',
+          name: 'Mike Johnson',
+          email: 'mike@example.com',
+          avatar: 'https://i.pravatar.cc/150?img=3',
+          role: 'Product Manager',
+        },
+      ],
     },
   ]);
 
