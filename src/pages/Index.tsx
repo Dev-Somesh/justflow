@@ -33,7 +33,7 @@ const Index = () => {
   // Function to handle project selection
   const handleProjectClick = () => {
     if (firstProject) {
-      setCurrentProject(firstProject);
+      setCurrentProject(firstProject.id); // Fix: Pass the project ID instead of the project object
       navigate('/board');
     }
   };

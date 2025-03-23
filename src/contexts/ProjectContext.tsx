@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Type definitions
@@ -55,7 +54,7 @@ export interface Task {
   childTaskIds: string[];
   epicId?: string;
   sprintId?: string;
-  projectId: string; // Add projectId to Task interface
+  projectId: string; // Project ID this task belongs to
 }
 
 export interface Sprint {
@@ -75,6 +74,8 @@ export interface Epic {
   startDate?: string;
   endDate?: string;
   createdAt: string;
+  name?: string; // Added for compatibility with existing code
+  color?: string; // Added for compatibility with existing code
 }
 
 export interface Project {
@@ -112,7 +113,7 @@ interface ProjectContextType {
   setCurrentProject: (projectId: string) => void;
   addProject: (project: Omit<Project, 'id'>) => void;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
-  addTask: (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords' | 'childTaskIds'>) => void;
+  addTask: (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords' | 'childTaskIds' | 'projectId'>) => void;
   updateTask: (projectId: string, taskId: string, updates: Partial<Task>) => void;
   deleteTask: (projectId: string, taskId: string) => void;
   getTaskById: (taskId: string) => Task | undefined;
@@ -136,6 +137,12 @@ interface ProjectContextType {
   removeTaskFromSprint: (projectId: string, taskId: string) => void;
   getTasksBySprint: (projectId: string, sprintId: string) => Task[];
   getTeamWorkload: (projectId: string) => Record<string, UserWorkload>;
+  addLabelToTask: (projectId: string, taskId: string, labelId: string) => void;
+  removeLabelFromTask: (projectId: string, taskId: string, labelId: string) => void;
+  updateTaskDueDate: (projectId: string, taskId: string, dueDate?: string) => void;
+  getSprintCapacity: (projectId: string, sprintId: string) => { totalStoryPoints: number, assignedStoryPoints: number, remainingCapacity: number };
+  addTaskToSprint: (projectId: string, taskId: string, sprintId: string) => void;
+  getUserWorkload: (projectId: string, userId: string) => UserWorkload | undefined;
 }
 
 // Create the context
@@ -230,7 +237,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   };
 
   // Update the addTask function to include projectId
-  const addTask = (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords' | 'childTaskIds'>) => {
+  const addTask = (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords' | 'childTaskIds' | 'projectId'>) => {
     setProjects(prevProjects => {
       return prevProjects.map(project => {
         if (project.id === projectId) {
@@ -508,6 +515,10 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
                 ...epic,
                 id: `epic-${Date.now()}`,
                 createdAt: new Date().toISOString(),
+                // Add name property based on title if not provided
+                name: epic.name || epic.title,
+                // Add default color if not provided
+                color: epic.color || '#3498db',
               },
             ],
           };
@@ -599,6 +610,105 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     return workload;
   };
 
+  // Add missing functions
+
+  // Add a label to a task
+  const addLabelToTask = (projectId: string, taskId: string, labelId: string) => {
+    const label = availableLabels.find(label => label.id === labelId);
+    if (!label) return;
+
+    setProjects(prevProjects =>
+      prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            tasks: project.tasks.map(task => {
+              if (task.id === taskId && !task.labels.some(l => l.id === labelId)) {
+                return {
+                  ...task,
+                  labels: [...task.labels, label],
+                };
+              }
+              return task;
+            }),
+          };
+        }
+        return project;
+      })
+    );
+  };
+
+  // Remove a label from a task
+  const removeLabelFromTask = (projectId: string, taskId: string, labelId: string) => {
+    setProjects(prevProjects =>
+      prevProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            tasks: project.tasks.map(task => {
+              if (task.id === taskId) {
+                return {
+                  ...task,
+                  labels: task.labels.filter(label => label.id !== labelId),
+                };
+              }
+              return task;
+            }),
+          };
+        }
+        return project;
+      })
+    );
+  };
+
+  // Update task due date
+  const updateTaskDueDate = (projectId: string, taskId: string, dueDate?: string) => {
+    updateTask(projectId, taskId, { dueDate });
+  };
+
+  // Get sprint capacity
+  const getSprintCapacity = (projectId: string, sprintId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return { totalStoryPoints: 0, assignedStoryPoints: 0, remainingCapacity: 0 };
+
+    // Calculate total capacity (in a real app, this would be based on team members and sprint duration)
+    const totalStoryPoints = 40; // Default capacity for demo purposes
+
+    // Calculate assigned story points
+    const sprintTasks = project.tasks.filter(task => task.sprintId === sprintId);
+    const assignedStoryPoints = sprintTasks.reduce((sum, task) => sum + (task.storyPoints || 0), 0);
+
+    // Calculate remaining capacity
+    const remainingCapacity = totalStoryPoints - assignedStoryPoints;
+
+    return { totalStoryPoints, assignedStoryPoints, remainingCapacity };
+  };
+
+  // Add task to sprint (alias for assignTaskToSprint for API consistency)
+  const addTaskToSprint = (projectId: string, taskId: string, sprintId: string) => {
+    assignTaskToSprint(projectId, taskId, sprintId);
+  };
+
+  // Get workload for a specific user
+  const getUserWorkload = (projectId: string, userId: string): UserWorkload | undefined => {
+    const user = getUserById(userId);
+    if (!user) return undefined;
+
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return undefined;
+
+    const assignedTasks = project.tasks.filter(task => task.assigneeId === userId);
+    const totalStoryPoints = assignedTasks.reduce((sum, task) => sum + (task.storyPoints || 0), 0);
+    const estimatedHours = totalStoryPoints * 3; // Rough estimate: 3 hours per story point
+
+    return {
+      user,
+      assignedTasks: assignedTasks.length,
+      totalStoryPoints,
+      estimatedHours,
+    };
+  };
+
   // Provider value
   const value: ProjectContextType = {
     projects,
@@ -633,6 +743,12 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     removeTaskFromSprint,
     getTasksBySprint,
     getTeamWorkload,
+    addLabelToTask,
+    removeLabelFromTask,
+    updateTaskDueDate,
+    getSprintCapacity,
+    addTaskToSprint,
+    getUserWorkload,
   };
 
   return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;
@@ -646,3 +762,4 @@ export const useProject = () => {
   }
   return context;
 };
+
