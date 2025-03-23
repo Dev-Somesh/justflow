@@ -8,10 +8,12 @@ import ProjectCard from '@/components/dashboard/ProjectCard';
 import RecentActivityWidget from '@/components/dashboard/RecentActivityWidget';
 import StoryPointsInfo from '@/components/dashboard/StoryPointsInfo';
 import TeamWorkloadView from '@/components/dashboard/TeamWorkloadView';
+import { useProject } from '@/contexts/ProjectContext';
 
 const Index = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { projects, setCurrentProject } = useProject();
   
   // Simple authentication check - in a real app, this would check for a token
   useEffect(() => {
@@ -25,6 +27,17 @@ const Index = () => {
     }
   }, [navigate]);
 
+  // Get the first project to display on dashboard
+  const firstProject = projects[0] || null;
+  
+  // Function to handle project selection
+  const handleProjectClick = () => {
+    if (firstProject) {
+      setCurrentProject(firstProject);
+      navigate('/board');
+    }
+  };
+
   // If not authenticated, show nothing while redirecting
   if (!isAuthenticated) {
     return null;
@@ -36,28 +49,30 @@ const Index = () => {
         <div className="md:col-span-2 space-y-6">
           <h1 className="text-2xl font-bold">Dashboard</h1>
           
-          <ProjectCard />
+          {firstProject && (
+            <ProjectCard project={firstProject} onClick={handleProjectClick} />
+          )}
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
               <h2 className="text-lg font-medium mb-4">Sprint Burndown</h2>
               <SprintBurndownChart />
             </div>
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
               <h2 className="text-lg font-medium mb-4">Team Velocity</h2>
               <VelocityChart />
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
             <h2 className="text-lg font-medium mb-4">Team Workload</h2>
-            <TeamWorkloadView />
+            <TeamWorkloadView projectId={firstProject?.id || 'project-1'} />
           </div>
         </div>
         
         <div className="space-y-6">
           <StoryPointsInfo />
-          <RecentActivityWidget />
+          <RecentActivityWidget projectId={firstProject?.id || 'project-1'} limit={5} />
         </div>
       </div>
     </AppLayout>
