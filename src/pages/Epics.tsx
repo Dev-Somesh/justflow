@@ -1,173 +1,137 @@
+
 import React, { useState } from 'react';
 import AppLayout from '@/components/layouts/AppLayout';
 import { useProject, Epic, Task } from '@/contexts/ProjectContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Plus, 
-  ChevronDown, 
-  ChevronRight, 
-  CalendarDays,
-  Star,
-  Edit,
-  Check,
-  X,
-  Clock,
-  Users,
-  Tag
-} from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
+import { format, differenceInDays } from 'date-fns';
+import { CalendarRange, Plus, ChevronRight, Calendar, MoreVertical, Edit, Trash2, ArrowRightCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-const Epics = () => {
+const EpicsPage = () => {
   const { 
     currentProject, 
+    addEpic, 
     getEpics, 
     getTasksByEpic, 
-    addEpic, 
     updateEpic, 
-    tasks: allTasks, 
-    addTaskToEpic, 
-    filterTasks 
+    assignTaskToEpic 
   } = useProject();
   
-  const [openEpics, setOpenEpics] = useState<string[]>([]);
-  const [isNewEpicDialogOpen, setIsNewEpicDialogOpen] = useState(false);
-  const [isEditEpicDialogOpen, setIsEditEpicDialogOpen] = useState(false);
-  const [isAssignTaskDialogOpen, setIsAssignTaskDialogOpen] = useState(false);
-  const [currentEditingEpic, setCurrentEditingEpic] = useState<Epic | null>(null);
-  const [currentEpicForTasks, setCurrentEpicForTasks] = useState<string>('');
-  
-  const [newEpic, setNewEpic] = useState({
-    name: '',
+  const [isNewEpicModalOpen, setIsNewEpicModalOpen] = useState(false);
+  const [isEditEpicModalOpen, setIsEditEpicModalOpen] = useState(false);
+  const [selectedEpic, setSelectedEpic] = useState<Epic | null>(null);
+  const [newEpicData, setNewEpicData] = useState({
+    title: '',
     description: '',
-    color: '#8B5CF6',
-    status: 'active' as const
+    startDate: '',
+    endDate: '',
+    status: 'active' as ('active' | 'completed'),
   });
   
-  const [editEpicData, setEditEpicData] = useState({
-    name: '',
-    description: '',
-    color: '',
-    status: 'active' as 'active' | 'completed'
-  });
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
-  const [selectedTaskId, setSelectedTaskId] = useState<string>('');
-  
-  const epics = currentProject ? getEpics(currentProject.id) : [];
-  
-  const toggleEpic = (epicId: string) => {
-    setOpenEpics(prev => 
-      prev.includes(epicId) 
-        ? prev.filter(id => id !== epicId) 
-        : [...prev, epicId]
+  if (!currentProject) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-[50vh]">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">No Project Selected</h2>
+            <p className="text-gray-500 mb-4">Please select a project from the dashboard</p>
+            <Button onClick={() => navigate('/dashboard')}>
+              Go to Dashboard
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
     );
-  };
+  }
   
-  const handleSubmitNewEpic = () => {
-    if (!currentProject || !newEpic.name) {
+  const epics = getEpics(currentProject.id);
+  
+  const handleCreateEpic = () => {
+    if (!newEpicData.title) {
       toast({
-        title: "Error",
-        description: "Epic name is required",
-        variant: "destructive"
+        title: "Epic title is required",
+        variant: "destructive",
       });
       return;
     }
     
-    addEpic(currentProject.id, newEpic);
-    setNewEpic({
-      name: '',
-      description: '',
-      color: '#8B5CF6',
-      status: 'active'
+    addEpic(currentProject.id, {
+      title: newEpicData.title,
+      description: newEpicData.description,
+      status: newEpicData.status,
+      startDate: newEpicData.startDate ? new Date(newEpicData.startDate).toISOString() : undefined,
+      endDate: newEpicData.endDate ? new Date(newEpicData.endDate).toISOString() : undefined,
     });
-    setIsNewEpicDialogOpen(false);
+    
+    setNewEpicData({
+      title: '',
+      description: '',
+      startDate: '',
+      endDate: '',
+      status: 'active',
+    });
+    
+    setIsNewEpicModalOpen(false);
     
     toast({
       title: "Epic created",
-      description: "New epic has been created successfully"
+      description: "New epic has been created successfully",
     });
   };
   
-  const handleEditEpic = (epic: Epic) => {
-    setCurrentEditingEpic(epic);
-    setEditEpicData({
-      name: epic.name,
+  const handleEditEpic = () => {
+    if (selectedEpic) {
+      updateEpic(currentProject.id, selectedEpic.id, {
+        title: newEpicData.title,
+        description: newEpicData.description,
+        status: newEpicData.status,
+        startDate: newEpicData.startDate ? new Date(newEpicData.startDate).toISOString() : undefined,
+        endDate: newEpicData.endDate ? new Date(newEpicData.endDate).toISOString() : undefined,
+      });
+      
+      setIsEditEpicModalOpen(false);
+      
+      toast({
+        title: "Epic updated",
+        description: "Epic has been updated successfully",
+      });
+    }
+  };
+  
+  const handleSelectEpicForEdit = (epic: Epic) => {
+    setSelectedEpic(epic);
+    setNewEpicData({
+      title: epic.title,
       description: epic.description,
-      color: epic.color,
-      status: epic.status
+      startDate: epic.startDate ? new Date(epic.startDate).toISOString().substring(0, 10) : '',
+      endDate: epic.endDate ? new Date(epic.endDate).toISOString().substring(0, 10) : '',
+      status: epic.status,
     });
-    setIsEditEpicDialogOpen(true);
+    setIsEditEpicModalOpen(true);
   };
-  
-  const handleUpdateEpic = () => {
-    if (!currentProject || !currentEditingEpic || !editEpicData.name) {
-      toast({
-        title: "Error",
-        description: "Epic name is required",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    updateEpic(currentProject.id, currentEditingEpic.id, editEpicData);
-    setIsEditEpicDialogOpen(false);
-    setCurrentEditingEpic(null);
-    
-    toast({
-      title: "Epic updated",
-      description: "Epic has been updated successfully"
-    });
-  };
-  
-  const handleOpenAssignTaskDialog = (epicId: string) => {
-    setCurrentEpicForTasks(epicId);
-    setSelectedTaskId('');
-    setIsAssignTaskDialogOpen(true);
-  };
-  
-  const handleAssignTask = () => {
-    if (!currentProject || !selectedTaskId || !currentEpicForTasks) {
-      toast({
-        title: "Error",
-        description: "Please select a task to assign",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    addTaskToEpic(currentProject.id, selectedTaskId, currentEpicForTasks);
-    setIsAssignTaskDialogOpen(false);
-    
-    toast({
-      title: "Task assigned",
-      description: "Task has been assigned to the epic successfully"
-    });
-  };
-  
-  const getAvailableTasks = () => {
-    if (!currentProject) return [];
-    
-    return allTasks.filter(task => 
-      task.epicId !== currentEpicForTasks && 
-      task.projectId === currentProject.id
-    );
-  };
-  
+
   return (
     <AppLayout>
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Epics & Roadmap</h1>
-          <p className="text-gray-500">Manage and organize work by epic</p>
+          <h1 className="text-2xl font-bold">Epics</h1>
+          <p className="text-gray-500">Manage and track large user stories</p>
         </div>
-        <Dialog open={isNewEpicDialogOpen} onOpenChange={setIsNewEpicDialogOpen}>
+        
+        <Dialog open={isNewEpicModalOpen} onOpenChange={setIsNewEpicModalOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus size={16} className="mr-2" />
@@ -177,373 +141,382 @@ const Epics = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Epic</DialogTitle>
+              <DialogDescription>
+                Epics are large bodies of work that can be broken down into smaller tasks.
+              </DialogDescription>
             </DialogHeader>
+            
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="name" className="text-right">
-                  Name
-                </label>
+              <div className="grid gap-2">
+                <Label htmlFor="title">Title</Label>
                 <Input
-                  id="name"
-                  value={newEpic.name}
-                  onChange={(e) => setNewEpic({ ...newEpic, name: e.target.value })}
-                  className="col-span-3"
+                  id="title"
+                  placeholder="Epic title"
+                  value={newEpicData.title}
+                  onChange={(e) => setNewEpicData({ ...newEpicData, title: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="description" className="text-right self-start">
-                  Description
-                </label>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  value={newEpic.description}
-                  onChange={(e) => setNewEpic({ ...newEpic, description: e.target.value })}
-                  className="col-span-3"
-                  rows={3}
+                  placeholder="Describe the epic"
+                  value={newEpicData.description}
+                  onChange={(e) => setNewEpicData({ ...newEpicData, description: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="color" className="text-right">
-                  Color
-                </label>
-                <div className="col-span-3 flex items-center gap-2">
-                  <input
-                    type="color"
-                    id="color"
-                    value={newEpic.color}
-                    onChange={(e) => setNewEpic({ ...newEpic, color: e.target.value })}
-                    className="w-8 h-8 rounded cursor-pointer"
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={newEpicData.startDate}
+                    onChange={(e) => setNewEpicData({ ...newEpicData, startDate: e.target.value })}
                   />
-                  <span className="text-sm">{newEpic.color}</span>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="endDate">End Date</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={newEpicData.endDate}
+                    onChange={(e) => setNewEpicData({ ...newEpicData, endDate: e.target.value })}
+                  />
                 </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="status" className="text-right">
-                  Status
-                </label>
-                <Select
-                  value={newEpic.status}
-                  onValueChange={(value) => setNewEpic({ ...newEpic, status: value as 'active' | 'completed' })}
+              
+              <div className="grid gap-2">
+                <Label htmlFor="status">Status</Label>
+                <select 
+                  id="status"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  value={newEpicData.status}
+                  onChange={(e) => setNewEpicData({ ...newEpicData, status: e.target.value as 'active' | 'completed' })}
                 >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                </select>
               </div>
             </div>
+            
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsNewEpicDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSubmitNewEpic}>
-                Create Epic
-              </Button>
+              <Button variant="outline" onClick={() => setIsNewEpicModalOpen(false)}>Cancel</Button>
+              <Button onClick={handleCreateEpic}>Create Epic</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
       
-      <Dialog open={isEditEpicDialogOpen} onOpenChange={setIsEditEpicDialogOpen}>
+      <Tabs defaultValue="all">
+        <TabsList className="mb-6">
+          <TabsTrigger value="all">All Epics</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all" className="space-y-6">
+          {epics.length === 0 ? (
+            <div className="text-center p-12 border rounded-md border-dashed">
+              <CalendarRange className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Epics Created</h3>
+              <p className="text-gray-500 mb-4">Create your first epic to organize larger bodies of work</p>
+              <Button onClick={() => setIsNewEpicModalOpen(true)}>
+                <Plus size={16} className="mr-2" />
+                Create First Epic
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {epics.map((epic) => (
+                <EpicCard 
+                  key={epic.id} 
+                  epic={epic} 
+                  tasks={getTasksByEpic(currentProject.id, epic.id)} 
+                  onEdit={() => handleSelectEpicForEdit(epic)}
+                  projectId={currentProject.id}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="active" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {epics.filter(epic => epic.status === 'active').map((epic) => (
+              <EpicCard 
+                key={epic.id} 
+                epic={epic} 
+                tasks={getTasksByEpic(currentProject.id, epic.id)} 
+                onEdit={() => handleSelectEpicForEdit(epic)}
+                projectId={currentProject.id}
+              />
+            ))}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="completed" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {epics.filter(epic => epic.status === 'completed').map((epic) => (
+              <EpicCard 
+                key={epic.id} 
+                epic={epic} 
+                tasks={getTasksByEpic(currentProject.id, epic.id)} 
+                onEdit={() => handleSelectEpicForEdit(epic)}
+                projectId={currentProject.id}
+              />
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
+      
+      {/* Edit Epic Dialog */}
+      <Dialog open={isEditEpicModalOpen} onOpenChange={setIsEditEpicModalOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Epic</DialogTitle>
           </DialogHeader>
+          
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="edit-name" className="text-right">
-                Name
-              </label>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-title">Title</Label>
               <Input
-                id="edit-name"
-                value={editEpicData.name}
-                onChange={(e) => setEditEpicData({ ...editEpicData, name: e.target.value })}
-                className="col-span-3"
+                id="edit-title"
+                placeholder="Epic title"
+                value={newEpicData.title}
+                onChange={(e) => setNewEpicData({ ...newEpicData, title: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="edit-description" className="text-right self-start">
-                Description
-              </label>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="edit-description">Description</Label>
               <Textarea
                 id="edit-description"
-                value={editEpicData.description}
-                onChange={(e) => setEditEpicData({ ...editEpicData, description: e.target.value })}
-                className="col-span-3"
-                rows={3}
+                placeholder="Describe the epic"
+                value={newEpicData.description}
+                onChange={(e) => setNewEpicData({ ...newEpicData, description: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="edit-color" className="text-right">
-                Color
-              </label>
-              <div className="col-span-3 flex items-center gap-2">
-                <input
-                  type="color"
-                  id="edit-color"
-                  value={editEpicData.color}
-                  onChange={(e) => setEditEpicData({ ...editEpicData, color: e.target.value })}
-                  className="w-8 h-8 rounded cursor-pointer"
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-startDate">Start Date</Label>
+                <Input
+                  id="edit-startDate"
+                  type="date"
+                  value={newEpicData.startDate}
+                  onChange={(e) => setNewEpicData({ ...newEpicData, startDate: e.target.value })}
                 />
-                <span className="text-sm">{editEpicData.color}</span>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit-endDate">End Date</Label>
+                <Input
+                  id="edit-endDate"
+                  type="date"
+                  value={newEpicData.endDate}
+                  onChange={(e) => setNewEpicData({ ...newEpicData, endDate: e.target.value })}
+                />
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="edit-status" className="text-right">
-                Status
-              </label>
-              <Select
-                value={editEpicData.status}
-                onValueChange={(value: 'active' | 'completed') => setEditEpicData({ ...editEpicData, status: value })}
+            
+            <div className="grid gap-2">
+              <Label htmlFor="edit-status">Status</Label>
+              <select 
+                id="edit-status"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                value={newEpicData.status}
+                onChange={(e) => setNewEpicData({ ...newEpicData, status: e.target.value as 'active' | 'completed' })}
               >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+              </select>
             </div>
           </div>
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditEpicDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateEpic}>
-              Update Epic
-            </Button>
+            <Button variant="outline" onClick={() => setIsEditEpicModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditEpic}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={isAssignTaskDialogOpen} onOpenChange={setIsAssignTaskDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Task to Epic</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="mb-4">
-              <label htmlFor="task-select" className="block text-sm font-medium mb-1">
-                Select Task
-              </label>
-              <Select
-                value={selectedTaskId}
-                onValueChange={setSelectedTaskId}
-              >
-                <SelectTrigger id="task-select">
-                  <SelectValue placeholder="Select a task" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getAvailableTasks().map(task => (
-                    <SelectItem key={task.id} value={task.id}>
-                      {task.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {selectedTaskId && getAvailableTasks().find(t => t.id === selectedTaskId) && (
-              <div className="bg-gray-50 p-3 rounded-md">
-                <h4 className="font-medium">Task Details</h4>
-                <p className="text-sm text-gray-600 mt-1">
-                  {getAvailableTasks().find(t => t.id === selectedTaskId)?.description}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant={`status-${getAvailableTasks().find(t => t.id === selectedTaskId)?.status}` as any}>
-                    {getAvailableTasks().find(t => t.id === selectedTaskId)?.status}
-                  </Badge>
-                  <Badge variant={`priority-${getAvailableTasks().find(t => t.id === selectedTaskId)?.priority}` as any}>
-                    {getAvailableTasks().find(t => t.id === selectedTaskId)?.priority}
-                  </Badge>
-                </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAssignTaskDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAssignTask} disabled={!selectedTaskId}>
-              Assign Task
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {!currentProject ? (
-        <div className="text-center py-10">
-          <p className="text-gray-500 mb-4">No project selected</p>
-          <Button onClick={() => window.location.href = '/'}>
-            Go to Dashboard
-          </Button>
-        </div>
-      ) : epics.length === 0 ? (
-        <Card className="border-dashed border-2 p-10">
-          <div className="text-center">
-            <h3 className="font-medium text-lg mb-2">No epics yet</h3>
-            <p className="text-gray-500 mb-4">Create your first epic to start organizing work</p>
-            <Button onClick={() => setIsNewEpicDialogOpen(true)}>
-              <Plus size={16} className="mr-2" />
-              Create First Epic
-            </Button>
-          </div>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {epics.map((epic) => {
-            const epicTasks = currentProject ? getTasksByEpic(currentProject.id, epic.id) : [];
-            const isOpen = openEpics.includes(epic.id);
-            const completedTasks = epicTasks.filter(t => t.status === 'done').length;
-            const totalTasks = epicTasks.length;
-            const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-            
-            const totalStoryPoints = epicTasks.reduce((total, task) => total + (task.storyPoints || 0), 0);
-            const completedStoryPoints = epicTasks
-              .filter(task => task.status === 'done')
-              .reduce((total, task) => total + (task.storyPoints || 0), 0);
-            
-            return (
-              <Card key={epic.id}>
-                <Collapsible open={isOpen} onOpenChange={() => toggleEpic(epic.id)}>
-                  <div className="border-b border-gray-100">
-                    <CollapsibleTrigger className="w-full">
-                      <div className="flex items-center justify-between p-4">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded-full" 
-                            style={{ backgroundColor: epic.color }}
-                          />
-                          <h3 className="font-medium">{epic.name}</h3>
-                          <Badge variant="outline" className="ml-2">
-                            {epic.status === 'active' ? 'Active' : 'Completed'}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1 text-sm text-gray-500 mr-2">
-                            <CalendarDays size={14} />
-                            <span>{format(new Date(epic.createdAt), 'MMM d, yyyy')}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-sm text-gray-500 mr-2">
-                            <Star size={14} />
-                            <span>{completedStoryPoints}/{totalStoryPoints} pts</span>
-                          </div>
-                          <div className="w-20 bg-gray-200 rounded-full h-2.5">
-                            <div 
-                              className="bg-green-500 h-2.5 rounded-full" 
-                              style={{ width: `${completionPercentage}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-sm text-gray-500">{completionPercentage}%</span>
-                          {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                        </div>
-                      </div>
-                    </CollapsibleTrigger>
-                  </div>
-                  <CollapsibleContent>
-                    <CardContent className="pt-4">
-                      <div className="flex justify-between items-start mb-4">
-                        <p className="text-gray-600">{epic.description}</p>
-                        <Button variant="ghost" size="sm" onClick={() => handleEditEpic(epic)}>
-                          <Edit size={14} className="mr-1" />
-                          Edit Epic
-                        </Button>
-                      </div>
-                      
-                      <div className="mt-6">
-                        <div className="flex justify-between items-center mb-2">
-                          <h4 className="font-medium">Tasks ({totalTasks})</h4>
-                          <Button variant="outline" size="sm" onClick={() => handleOpenAssignTaskDialog(epic.id)}>
-                            <Plus size={14} className="mr-1" />
-                            Add Task to Epic
-                          </Button>
-                        </div>
-                        
-                        {epicTasks.length === 0 ? (
-                          <p className="text-gray-500 text-sm p-4 text-center bg-gray-50 rounded-md">No tasks in this epic yet</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {epicTasks.map((task) => (
-                              <div 
-                                key={task.id} 
-                                className="p-3 bg-gray-50 rounded-md"
-                              >
-                                <div className="flex justify-between">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Badge 
-                                      variant={`status-${task.status}` as any} 
-                                      className="text-xs"
-                                    >
-                                      {task.status}
-                                    </Badge>
-                                    <Badge 
-                                      variant={`priority-${task.priority}` as any} 
-                                      className="text-xs"
-                                    >
-                                      {task.priority}
-                                    </Badge>
-                                    {task.storyPoints && (
-                                      <span className="text-xs bg-gray-200 px-1.5 py-0.5 rounded-full">
-                                        {task.storyPoints} pts
-                                      </span>
-                                    )}
-                                  </div>
-                                  {task.dueDate && (
-                                    <div className="flex items-center text-xs text-gray-500">
-                                      <Clock size={12} className="mr-1" />
-                                      {format(new Date(task.dueDate), 'MMM d, yyyy')}
-                                    </div>
-                                  )}
-                                </div>
-                                <h5 className="font-medium mb-1">{task.title}</h5>
-                                <p className="text-sm text-gray-600 mb-2">{task.description.substring(0, 100)}{task.description.length > 100 && '...'}</p>
-                                
-                                <div className="flex justify-between items-center mt-2">
-                                  {task.assigneeId ? (
-                                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                                      <Users size={12} />
-                                      <span>{task.assigneeId}</span>
-                                    </div>
-                                  ) : (
-                                    <span className="text-xs text-gray-400">Unassigned</span>
-                                  )}
-                                  
-                                  {task.labels && task.labels.length > 0 && (
-                                    <div className="flex gap-1">
-                                      {task.labels.map(label => (
-                                        <div 
-                                          key={label.id} 
-                                          className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded"
-                                          style={{ backgroundColor: `${label.color}20` }}
-                                        >
-                                          <div 
-                                            className="w-2 h-2 rounded-full" 
-                                            style={{ backgroundColor: label.color }}
-                                          />
-                                          <span>{label.name}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
-            );
-          })}
-        </div>
-      )}
     </AppLayout>
   );
 };
 
-export default Epics;
+// Epic Card Component
+interface EpicCardProps {
+  epic: Epic;
+  tasks: Task[];
+  onEdit: () => void;
+  projectId: string;
+}
+
+const EpicCard: React.FC<EpicCardProps> = ({ epic, tasks, onEdit, projectId }) => {
+  const { assignTaskToEpic } = useProject();
+  const navigate = useNavigate();
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  
+  const progress = tasks.length > 0
+    ? (tasks.filter(task => task.status === 'done').length / tasks.length) * 100
+    : 0;
+  
+  const handleNavigateToTasks = () => {
+    navigate(`/board?epicId=${epic.id}`);
+  };
+
+  // This function is needed for the taskId/projectId check
+  const handleAssignToEpic = (taskId: string) => {
+    // Make sure we filter tasks by projectId to avoid issues
+    if (taskId && projectId) {
+      assignTaskToEpic(projectId, taskId, epic.id);
+      setIsAssignDialogOpen(false);
+    }
+  };
+  
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between">
+          <CardTitle className="text-lg">{epic.title}</CardTitle>
+          <div className="flex gap-2">
+            <Badge variant={epic.status === 'active' ? 'secondary' : 'outline'}>
+              {epic.status === 'active' ? 'Active' : 'Completed'}
+            </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <MoreVertical size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onEdit}>
+                  <Edit size={14} className="mr-2" />
+                  Edit Epic
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsAssignDialogOpen(true)}>
+                  <ArrowRightCircle size={14} className="mr-2" />
+                  Assign Tasks
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pb-2">
+        <p className="text-sm text-gray-500 mb-4">{epic.description}</p>
+        
+        {(epic.startDate || epic.endDate) && (
+          <div className="flex items-center text-sm text-gray-500 mb-4">
+            <Calendar size={14} className="mr-2" />
+            {epic.startDate && (
+              <span>{format(new Date(epic.startDate), 'MMM d, yyyy')}</span>
+            )}
+            {epic.startDate && epic.endDate && <span className="mx-2">-</span>}
+            {epic.endDate && (
+              <span>{format(new Date(epic.endDate), 'MMM d, yyyy')}</span>
+            )}
+            {epic.startDate && epic.endDate && (
+              <Badge variant="outline" className="ml-2">
+                {differenceInDays(new Date(epic.endDate), new Date(epic.startDate))} days
+              </Badge>
+            )}
+          </div>
+        )}
+        
+        <div className="mb-4">
+          <div className="flex justify-between text-sm mb-1">
+            <span>Progress</span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div 
+              className="bg-primary h-2.5 rounded-full" 
+              style={{ width: `${progress}%` }} 
+            />
+          </div>
+        </div>
+        
+        <div className="mb-2">
+          <div className="flex justify-between items-center">
+            <h4 className="text-sm font-medium">Tasks ({tasks.length})</h4>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={handleNavigateToTasks}>
+              View All
+              <ChevronRight size={14} className="ml-1" />
+            </Button>
+          </div>
+          <div className="mt-2">
+            {tasks.length > 0 ? (
+              <ScrollArea className="h-24">
+                <div className="space-y-1">
+                  {tasks.slice(0, 5).map((task) => (
+                    <div 
+                      key={task.id} 
+                      className="text-sm p-2 rounded hover:bg-gray-100 cursor-pointer flex justify-between"
+                      onClick={() => navigate(`/board?task=${task.id}`)}
+                    >
+                      <span className="truncate">{task.title}</span>
+                      <Badge 
+                        variant="outline" 
+                        className={`ml-2 ${
+                          task.status === 'done' 
+                            ? 'bg-green-100 text-green-800 border-green-200' 
+                            : task.status === 'in-progress' 
+                              ? 'bg-blue-100 text-blue-800 border-blue-200'
+                              : 'bg-gray-100 text-gray-800 border-gray-200'
+                        }`}
+                      >
+                        {task.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="text-sm text-gray-500 text-center py-6">
+                No tasks assigned to this epic
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full"
+          onClick={handleNavigateToTasks}
+        >
+          <Plus size={14} className="mr-2" />
+          Add Tasks to Epic
+        </Button>
+      </CardFooter>
+      
+      {/* Task Assignment Dialog */}
+      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Tasks to Epic</DialogTitle>
+            <DialogDescription>
+              Select tasks to include in this epic.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Task assignment UI would go here */}
+          <div className="text-sm text-gray-500 text-center py-6">
+            To assign tasks to this epic, please use the task detail modal in the board view.
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+};
+
+export default EpicsPage;
