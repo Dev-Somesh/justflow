@@ -95,11 +95,11 @@ const AppFooter = () => {
           </div>
           
           <div>
-            <h3 className="font-medium text-lg mb-4">Help & Support</h3>
+            <h3 className="font-medium text-lg mb-4">Resources</h3>
             <ul className="space-y-2">
               <li>
-                <Link to={isAuthenticated ? "/help" : "/faqs"} className="text-gray-600 hover:text-blue-600 transition-colors">
-                  Help Center
+                <Link to="/faqs" className="text-gray-600 hover:text-blue-600 transition-colors">
+                  FAQs
                 </Link>
               </li>
               <li>
@@ -108,20 +108,22 @@ const AppFooter = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/faqs" className="text-gray-600 hover:text-blue-600 transition-colors">
-                  FAQs
-                </Link>
-              </li>
-              <li>
                 <Link to="/api-docs" className="text-gray-600 hover:text-blue-600 transition-colors">
                   API Documentation
                 </Link>
               </li>
+              {isAuthenticated && (
+                <li>
+                  <Link to="/help" className="text-gray-600 hover:text-blue-600 transition-colors">
+                    Help Center
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
           
           <div>
-            <h3 className="font-medium text-lg mb-4">Developer Profile</h3>
+            <h3 className="font-medium text-lg mb-4">Developer</h3>
             <ul className="space-y-2">
               <li className="flex items-center">
                 <span className="font-semibold">Somesh Bhardwaj</span>

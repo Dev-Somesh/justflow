@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Logo from '@/components/ui/Logo';
 import { Button } from '@/components/ui/button';
+import AppFooter from '@/components/layouts/AppFooter';
 import {
   CheckCircle2,
   Clock,
@@ -228,78 +228,7 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">JustFlow</h3>
-              <div className="flex items-center">
-                <Logo size="sm" />
-                <span className="font-mono font-semibold ml-2">JustFlow</span>
-              </div>
-              <p className="mt-4 text-gray-400">
-                Modern project management for teams of all sizes.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Product</h3>
-              <ul className="space-y-2">
-                <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Roadmap</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Changelog</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Resources</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Guides</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">API</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Community</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Developer</h3>
-              <ul className="space-y-2">
-                <li>
-                  <a 
-                    href="https://github.com/Dev-Somesh" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-gray-400 hover:text-white transition-colors flex items-center"
-                  >
-                    <span>Somesh Bhardwaj</span>
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="https://www.linkedin.com/in/ersomeshbhardwaj/" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    LinkedIn
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="mailto:ITdeveloper06@gmail.com" 
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    ITdeveloper06@gmail.com
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-700 mt-12 pt-8 text-center">
-            <p className="text-gray-400">
-              &copy; {new Date().getFullYear()} JustFlow. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <AppFooter />
     </div>
   );
 };
