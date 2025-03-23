@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Logo from '@/components/ui/Logo';
@@ -58,9 +57,12 @@ const LandingPage = () => {
             </div>
             <div className="lg:w-1/2">
               <img 
-                src="https://cdn.gpteng.co/placeholder/gpt_JustFlow-Dashboard-Screenshot-6ad2b3b6.webp" 
+                src="/justflow-dashboard.webp" 
                 alt="JustFlow Dashboard" 
                 className="rounded-lg shadow-xl"
+                onError={(e) => {
+                  e.currentTarget.src = "https://placehold.co/800x450/e6f7ff/0099ff?text=JustFlow+Dashboard";
+                }}
               />
             </div>
           </div>
@@ -349,3 +351,4 @@ const PricingCard = ({
 };
 
 export default LandingPage;
+

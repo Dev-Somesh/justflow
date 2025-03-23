@@ -11,6 +11,7 @@ import {
   Clock,
   Target,
   HelpCircle,
+  LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -21,19 +22,37 @@ import {
 } from "@/components/ui/tooltip";
 import { useProject } from '@/contexts/ProjectContext';
 import Logo from '@/components/ui/Logo';
+import { useToast } from '@/components/ui/use-toast';
 
 const AppHeader = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { currentProject, tasks } = useProject();
   
   const highPriorityCount = tasks.filter(t => t.priority === 'high').length;
   const pendingTasksCount = tasks.filter(t => t.status !== 'done').length;
+  const username = sessionStorage.getItem('username') || 'admin';
+  
+  const handleLogout = () => {
+    // Clear session storage
+    sessionStorage.removeItem('loginSuccess');
+    sessionStorage.removeItem('username');
+    
+    // Show toast notification
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of JustFlow.",
+    });
+    
+    // Redirect to home page
+    navigate('/');
+  };
   
   const mainRoutes = [
     {
       name: 'Dashboard',
       icon: <LayoutDashboard className="h-5 w-5" />,
-      path: '/',
+      path: '/dashboard',
     },
     {
       name: 'Board',
@@ -142,6 +161,20 @@ const AppHeader = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <p>Help & Documentation</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button variant="outline" size="sm" className="ml-2" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Logout ({username})</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Log out from JustFlow</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
