@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Logo from '@/components/ui/Logo';
@@ -57,11 +58,15 @@ const LandingPage = () => {
             </div>
             <div className="lg:w-1/2">
               <img 
-                src="/justflow-dashboard.webp" 
+                src="/lovable-uploads/6af70d45-cd16-4c1e-8bb3-bbc3931587a1.png" 
                 alt="JustFlow Dashboard" 
-                className="rounded-lg shadow-xl"
+                className="rounded-lg shadow-xl border border-gray-200"
                 onError={(e) => {
-                  e.currentTarget.src = "https://placehold.co/800x450/e6f7ff/0099ff?text=JustFlow+Dashboard";
+                  e.currentTarget.src = "/justflow-dashboard.png";
+                  if (e.currentTarget.src.includes("justflow-dashboard.png")) {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "https://placehold.co/800x450/e6f7ff/0099ff?text=JustFlow+Dashboard";
+                  }
                 }}
               />
             </div>
@@ -255,12 +260,36 @@ const LandingPage = () => {
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Company</h3>
+              <h3 className="text-lg font-semibold mb-4">Developer</h3>
               <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                <li>
+                  <a 
+                    href="https://github.com/Dev-Somesh" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-gray-400 hover:text-white transition-colors flex items-center"
+                  >
+                    <span>Somesh Bhardwaj</span>
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="https://www.linkedin.com/in/ersomeshbhardwaj/" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    LinkedIn
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="mailto:ITdeveloper06@gmail.com" 
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    ITdeveloper06@gmail.com
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
@@ -351,4 +380,3 @@ const PricingCard = ({
 };
 
 export default LandingPage;
-

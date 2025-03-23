@@ -13,7 +13,7 @@ const AppFooter = () => {
   return (
     <footer className="bg-white border-t border-gray-200 mt-auto">
       <div className="container mx-auto py-6 px-4 md:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <Link to="/" className="flex items-center mb-4">
               <Logo size="sm" />
@@ -116,6 +116,33 @@ const AppFooter = () => {
                 <Link to="/api-docs" className="text-gray-600 hover:text-blue-600 transition-colors">
                   API Documentation
                 </Link>
+              </li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 className="font-medium text-lg mb-4">Developer Profile</h3>
+            <ul className="space-y-2">
+              <li className="flex items-center">
+                <span className="font-semibold">Somesh Bhardwaj</span>
+              </li>
+              <li>
+                <a href="https://github.com/Dev-Somesh" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-blue-600 transition-colors flex items-center">
+                  <Github size={16} className="mr-2" />
+                  <span>GitHub</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.linkedin.com/in/ersomeshbhardwaj/" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-blue-600 transition-colors flex items-center">
+                  <Linkedin size={16} className="mr-2" />
+                  <span>LinkedIn</span>
+                </a>
+              </li>
+              <li>
+                <a href="mailto:ITdeveloper06@gmail.com" className="text-gray-600 hover:text-blue-600 transition-colors flex items-center">
+                  <Mail size={16} className="mr-2" />
+                  <span>Email</span>
+                </a>
               </li>
             </ul>
           </div>
