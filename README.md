@@ -1,8 +1,8 @@
-# Welcome to your Lovable project
+# Welcome to JustFlow Modern Modern Project Management Simplified
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/745026ee-d689-4fd8-825e-c150ba344d6b
+**URL**: https://justflow.lovable.app/
 
 ## How can I edit this code?
 
