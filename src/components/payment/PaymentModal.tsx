@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -14,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { 
   CreditCard, 
   Calendar, 
-  LockClosedIcon, 
+  Lock, 
   CheckCircle2
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -173,7 +172,7 @@ const PaymentModal = ({ isOpen, onClose, plan }: PaymentModalProps) => {
                 <div className="space-y-2">
                   <Label htmlFor="cvv">CVV</Label>
                   <div className="relative">
-                    <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <Input
                       id="cvv"
                       type="password"
@@ -201,7 +200,7 @@ const PaymentModal = ({ isOpen, onClose, plan }: PaymentModalProps) => {
             </div>
             
             <div className="text-xs text-gray-500 flex items-center">
-              <LockClosedIcon size={12} className="mr-1" />
+              <Lock size={12} className="mr-1" />
               Your payment information is secure and encrypted
             </div>
             
