@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Logo from '@/components/ui/Logo';
 import { Button } from '@/components/ui/button';
@@ -10,14 +11,28 @@ import {
   Kanban,
   Users,
   BarChart4,
-  Calendar as CalendarIcon,
+  CalendarIcon,
+  CreditCard,
 } from 'lucide-react';
+import PaymentModal from '@/components/payment/PaymentModal';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const [isAnnualPlan, setIsAnnualPlan] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen relative overflow-hidden">
+      {/* Background pattern overlay */}
+      <div 
+        className="absolute inset-0 z-0 opacity-10 pointer-events-none" 
+        style={{ 
+          backgroundImage: 'url("/pattern-bg.svg")',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat'
+        }}
+      />
+      
       {/* Header */}
       <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -36,10 +51,10 @@ const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <section className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50 relative z-0">
         <div className="container mx-auto px-4">
           <div className="flex flex-col lg:flex-row items-center">
-            <div className="lg:w-1/2 mb-10 lg:mb-0">
+            <div className="lg:w-1/2 mb-10 lg:mb-0 pr-0 lg:pr-16">
               <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
                 Modern Project Management
                 <span className="text-blue-600"> Simplified</span>
@@ -120,7 +135,7 @@ const LandingPage = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-gray-50">
+      <section id="testimonials" className="py-20 bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">What Our Users Say</h2>
@@ -134,16 +149,19 @@ const LandingPage = () => {
               quote="JustFlow has transformed how our team works. We've increased our velocity by 40% since we started using it."
               author="Sarah Johnson"
               title="Project Manager, TechCorp"
+              color="blue"
             />
             <TestimonialCard 
               quote="The best project management tool we've used. Simple enough for everyone to understand, yet powerful enough for complex projects."
               author="Michael Chen"
               title="CTO, StartupX"
+              color="purple"
             />
             <TestimonialCard 
               quote="We've been able to reduce our meeting time by 30% because JustFlow gives us clear visibility into what everyone is working on."
               author="Emily Rodriguez"
               title="Team Lead, DesignHub"
+              color="green"
             />
           </div>
         </div>
@@ -157,6 +175,20 @@ const LandingPage = () => {
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               No hidden fees, no surprises. Choose the plan that's right for your team.
             </p>
+            <div className="mt-8 inline-flex items-center p-1 bg-gray-100 rounded-full">
+              <button
+                className={`px-4 py-2 rounded-full transition-all ${!isAnnualPlan ? 'bg-white shadow-sm' : ''}`}
+                onClick={() => setIsAnnualPlan(false)}
+              >
+                Monthly
+              </button>
+              <button
+                className={`px-4 py-2 rounded-full transition-all ${isAnnualPlan ? 'bg-white shadow-sm' : ''}`}
+                onClick={() => setIsAnnualPlan(true)}
+              >
+                Annual (Save 25%)
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8 justify-center">
@@ -173,11 +205,12 @@ const LandingPage = () => {
               ]}
               buttonText="Get Started"
               buttonVariant="outline"
+              onButtonClick={() => navigate('/login')}
             />
             <PricingCard 
               title="Professional"
-              price="$12"
-              period="per user/month"
+              price={isAnnualPlan ? "$5.99" : "$7.99"}
+              period={`per user/month${isAnnualPlan ? ', billed annually' : ''}`}
               description="Everything you need for a growing team"
               features={[
                 "Unlimited team members",
@@ -190,6 +223,7 @@ const LandingPage = () => {
               buttonText="Start Free Trial"
               buttonVariant="default"
               isHighlighted={true}
+              onButtonClick={() => setIsPaymentModalOpen(true)}
             />
             <PricingCard 
               title="Enterprise"
@@ -205,6 +239,7 @@ const LandingPage = () => {
               ]}
               buttonText="Contact Sales"
               buttonVariant="outline"
+              onButtonClick={() => navigate('/login')}
             />
           </div>
         </div>
@@ -229,6 +264,17 @@ const LandingPage = () => {
 
       {/* Footer */}
       <AppFooter />
+
+      {/* Payment Modal */}
+      <PaymentModal 
+        isOpen={isPaymentModalOpen} 
+        onClose={() => setIsPaymentModalOpen(false)}
+        plan={{
+          name: "Professional",
+          price: isAnnualPlan ? "$5.99" : "$7.99",
+          billing: isAnnualPlan ? "annually" : "monthly"
+        }}
+      />
     </div>
   );
 };
@@ -245,10 +291,22 @@ const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, titl
 };
 
 // Testimonial Card Component
-const TestimonialCard = ({ quote, author, title }: { quote: string, author: string, title: string }) => {
+const TestimonialCard = ({ quote, author, title, color = "blue" }: { quote: string, author: string, title: string, color?: "blue" | "purple" | "green" }) => {
+  const colorClasses = {
+    blue: "bg-blue-50 border-blue-200 shadow-blue-100",
+    purple: "bg-purple-50 border-purple-200 shadow-purple-100",
+    green: "bg-green-50 border-green-200 shadow-green-100"
+  };
+
+  const iconColors = {
+    blue: "text-blue-500",
+    purple: "text-purple-500",
+    green: "text-green-500"
+  };
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-      <div className="text-blue-600 mb-4">
+    <div className={`p-6 rounded-lg shadow-md border ${colorClasses[color]}`}>
+      <div className={`mb-4 ${iconColors[color]}`}>
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
           <path d="M4.583 17.321C3.553 16.227 3 15 3 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5 3.871 3.871 0 01-2.748-1.179zm10 0C13.553 16.227 13 15 13 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5 3.871 3.871 0 01-2.748-1.179z"/>
         </svg>
@@ -271,7 +329,8 @@ const PricingCard = ({
   features, 
   buttonText, 
   buttonVariant = "default",
-  isHighlighted = false
+  isHighlighted = false,
+  onButtonClick
 }: { 
   title: string, 
   price: string, 
@@ -280,7 +339,8 @@ const PricingCard = ({
   features: string[], 
   buttonText: string, 
   buttonVariant?: "default" | "outline", 
-  isHighlighted?: boolean 
+  isHighlighted?: boolean,
+  onButtonClick?: () => void
 }) => {
   return (
     <div className={`bg-white rounded-lg border ${isHighlighted ? 'border-blue-500 ring-4 ring-blue-50' : 'border-gray-200'} p-8 flex flex-col`}>
@@ -301,6 +361,7 @@ const PricingCard = ({
       <Button 
         variant={buttonVariant} 
         className={isHighlighted ? "w-full bg-blue-600 hover:bg-blue-700" : "w-full"}
+        onClick={onButtonClick}
       >
         {buttonText}
       </Button>
