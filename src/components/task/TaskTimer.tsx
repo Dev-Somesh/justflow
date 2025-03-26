@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlayCircle, PauseCircle, StopCircle, Clock } from 'lucide-react';
@@ -16,10 +16,10 @@ const TaskTimer: React.FC<TaskTimerProps> = ({ projectId, taskId, onTimeRecorded
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0); // in seconds
   const [startTime, setStartTime] = useState<Date | null>(null);
-  const { addTimeRecord, tasks } = useProject();
+  const { addTimeRecord, getTaskById } = useProject();
   const { toast } = useToast();
   
-  const task = tasks.find(t => t.id === taskId);
+  const task = getTaskById(taskId);
   
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -33,37 +33,41 @@ const TaskTimer: React.FC<TaskTimerProps> = ({ projectId, taskId, onTimeRecorded
     return () => clearInterval(interval);
   }, [isRunning]);
   
-  const formatTime = (seconds: number): string => {
+  const formatTime = useCallback((seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  }, []);
   
-  const handleStart = () => {
+  const handleStart = useCallback(() => {
     setIsRunning(true);
     setStartTime(new Date());
     toast({
       title: "Timer started",
       description: `Tracking time for: ${task?.title || 'Unknown task'}`,
     });
-  };
+  }, [task, toast]);
   
-  const handlePause = () => {
+  const handlePause = useCallback(() => {
     setIsRunning(false);
     toast({
       title: "Timer paused",
       description: `You've tracked ${formatTime(elapsedTime)} so far`,
     });
-  };
+  }, [elapsedTime, formatTime, toast]);
   
-  const handleStop = () => {
-    setIsRunning(false);
-    
-    if (startTime && elapsedTime > 0) {
+  const handleStop = useCallback(() => {
+    try {
+      setIsRunning(false);
+      
+      if (!startTime || elapsedTime <= 0 || !task) {
+        return;
+      }
+      
       // Convert seconds to minutes for the API
-      const durationInMinutes = Math.round(elapsedTime / 60);
+      const durationInMinutes = Math.max(1, Math.round(elapsedTime / 60));
       
       // Record the time
       addTimeRecord(projectId, taskId, {
@@ -87,8 +91,25 @@ const TaskTimer: React.FC<TaskTimerProps> = ({ projectId, taskId, onTimeRecorded
       if (onTimeRecorded) {
         onTimeRecorded();
       }
+    } catch (error) {
+      console.error("Error recording time:", error);
+      toast({
+        title: "Error",
+        description: "Failed to record time. Please try again.",
+        variant: "destructive",
+      });
     }
-  };
+  }, [startTime, elapsedTime, task, addTimeRecord, projectId, taskId, formatTime, toast, onTimeRecorded]);
+  
+  if (!task) {
+    return (
+      <Card>
+        <CardContent className="py-4">
+          <p className="text-center text-gray-500">Task not found</p>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <Card>

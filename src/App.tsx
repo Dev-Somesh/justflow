@@ -42,7 +42,11 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={
+              sessionStorage.getItem('loginSuccess') === 'true' ? 
+                <Navigate to="/dashboard" replace /> : 
+                <LandingPage />
+            } />
             <Route path="/login" element={<Login />} />
             <Route path="/faqs" element={<FAQs />} />
             <Route path="/guides" element={<UserGuides />} />
@@ -84,13 +88,6 @@ const App = () => (
               <ProtectedRoute>
                 <Help />
               </ProtectedRoute>
-            } />
-            
-            {/* Redirect / to /dashboard when authenticated */}
-            <Route path="/" element={
-              sessionStorage.getItem('loginSuccess') === 'true' ? 
-                <Navigate to="/dashboard" replace /> : 
-                <LandingPage />
             } />
             
             {/* Redirect /index to /dashboard */}

@@ -1,10 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, StopCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { TimeRecord } from '@/contexts/ProjectContext';
 import { formatDistance } from 'date-fns';
+import { useToast } from '@/components/ui/use-toast';
 
 interface TimeTrackerProps {
   taskId: string;
@@ -18,16 +19,20 @@ const TimeTracker: React.FC<TimeTrackerProps> = ({
   taskId, 
   projectId, 
   userId, 
-  timeRecords,
+  timeRecords = [],
   onAddTimeRecord 
 }) => {
   const [isTracking, setIsTracking] = useState(false);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0); // seconds
   const [note, setNote] = useState('');
+  const { toast } = useToast();
   
-  // Calculate total time spent
-  const totalTimeInMinutes = timeRecords.reduce((total, record) => total + record.duration, 0);
+  // Calculate total time spent - safely handle if timeRecords is undefined
+  const totalTimeInMinutes = Array.isArray(timeRecords) 
+    ? timeRecords.reduce((total, record) => total + (record.duration || 0), 0)
+    : 0;
+    
   const totalHours = Math.floor(totalTimeInMinutes / 60);
   const totalMinutes = totalTimeInMinutes % 60;
 
@@ -47,39 +52,55 @@ const TimeTracker: React.FC<TimeTrackerProps> = ({
     };
   }, [isTracking, startTime]);
   
-  const formatElapsedTime = () => {
+  const formatElapsedTime = useCallback(() => {
     const hours = Math.floor(elapsedTime / 3600);
     const minutes = Math.floor((elapsedTime % 3600) / 60);
     const seconds = elapsedTime % 60;
     
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
+  }, [elapsedTime]);
   
-  const handleStartTracking = () => {
+  const handleStartTracking = useCallback(() => {
     const now = new Date();
     setStartTime(now);
     setIsTracking(true);
     setElapsedTime(0);
-  };
+    toast({
+      title: "Time tracking started",
+      description: "The timer is now running"
+    });
+  }, [toast]);
   
-  const handlePauseTracking = () => {
+  const handlePauseTracking = useCallback(() => {
     setIsTracking(false);
-  };
+    toast({
+      title: "Time tracking paused",
+      description: `Current duration: ${formatElapsedTime()}`
+    });
+  }, [formatElapsedTime, toast]);
   
-  const handleResumeTracking = () => {
+  const handleResumeTracking = useCallback(() => {
     if (startTime) {
       const pausedDuration = Math.floor(elapsedTime);
       const adjustedStartTime = new Date();
       adjustedStartTime.setSeconds(adjustedStartTime.getSeconds() - pausedDuration);
       setStartTime(adjustedStartTime);
       setIsTracking(true);
+      toast({
+        title: "Time tracking resumed",
+        description: "The timer is now running again"
+      });
     }
-  };
+  }, [startTime, elapsedTime, toast]);
   
-  const handleStopTracking = () => {
-    if (startTime) {
+  const handleStopTracking = useCallback(() => {
+    try {
+      if (!startTime) {
+        return;
+      }
+      
       const endTime = new Date();
-      const durationInMinutes = Math.ceil(elapsedTime / 60); // Round up to nearest minute
+      const durationInMinutes = Math.max(1, Math.ceil(elapsedTime / 60)); // Round up to nearest minute, minimum 1
       
       onAddTimeRecord({
         userId,
@@ -89,12 +110,24 @@ const TimeTracker: React.FC<TimeTrackerProps> = ({
         note: note.trim() || undefined,
       });
       
+      toast({
+        title: "Time entry saved",
+        description: `Recorded ${durationInMinutes} minute${durationInMinutes === 1 ? '' : 's'}`
+      });
+      
       setIsTracking(false);
       setStartTime(null);
       setElapsedTime(0);
       setNote('');
+    } catch (error) {
+      console.error("Error stopping time tracking:", error);
+      toast({
+        title: "Error recording time",
+        description: "Please try again",
+        variant: "destructive"
+      });
     }
-  };
+  }, [startTime, elapsedTime, note, onAddTimeRecord, userId, toast]);
   
   return (
     <div className="space-y-4">
@@ -151,7 +184,7 @@ const TimeTracker: React.FC<TimeTrackerProps> = ({
         </Button>
       )}
       
-      {timeRecords.length > 0 && (
+      {Array.isArray(timeRecords) && timeRecords.length > 0 && (
         <div>
           <h4 className="text-sm font-medium mb-2">Recent time entries</h4>
           <div className="space-y-2">

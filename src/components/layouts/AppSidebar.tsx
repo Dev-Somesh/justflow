@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Calendar, 
@@ -12,7 +12,6 @@ import {
   ChevronUp,
   Target,
   Shield,
-  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,6 +19,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import UserAvatar from '@/components/ui/UserAvatar';
 import AdminPanel from '@/components/admin/AdminPanel';
 import Logo from '@/components/ui/Logo';
+import { useToast } from '@/components/ui/use-toast';
 
 const AppSidebar = () => {
   const navigate = useNavigate();
@@ -27,6 +27,7 @@ const AppSidebar = () => {
   const { currentProject, users } = useProject();
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const { toast } = useToast();
   
   // Get first user as current user (in a real app, this would be the logged-in user)
   const currentUser = users[0];
@@ -64,9 +65,22 @@ const AppSidebar = () => {
     },
   ];
 
-  const isActive = (path: string) => {
+  const isActive = useCallback((path: string) => {
     return location.pathname === path;
-  };
+  }, [location.pathname]);
+  
+  const handleNavigation = useCallback((path: string) => {
+    try {
+      navigate(path);
+    } catch (error) {
+      console.error("Navigation error:", error);
+      toast({
+        title: "Navigation failed",
+        description: "There was a problem navigating to the page",
+        variant: "destructive"
+      });
+    }
+  }, [navigate, toast]);
   
   return (
     <div className="w-64 border-r border-gray-200 bg-white h-full flex flex-col">
@@ -88,7 +102,7 @@ const AppSidebar = () => {
                 key={route.path}
                 variant={isActive(route.path) ? "default" : "ghost"}
                 className="w-full justify-start"
-                onClick={() => navigate(route.path)}
+                onClick={() => handleNavigation(route.path)}
               >
                 {route.icon}
                 <span className="ml-3">{route.name}</span>
@@ -113,7 +127,7 @@ const AppSidebar = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-sm" 
-                  onClick={() => navigate('/board?priority=high')}
+                  onClick={() => handleNavigation('/board?priority=high')}
                 >
                   <span className="w-2 h-2 rounded-full bg-red-500 mr-2"></span>
                   High Priority
@@ -121,7 +135,7 @@ const AppSidebar = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-sm" 
-                  onClick={() => navigate('/board?assignee=user-1')}
+                  onClick={() => handleNavigation('/board?assignee=user-1')}
                 >
                   <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
                   Assigned to me
@@ -129,7 +143,7 @@ const AppSidebar = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-sm" 
-                  onClick={() => navigate('/board?status=in-progress')}
+                  onClick={() => handleNavigation('/board?status=in-progress')}
                 >
                   <span className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
                   In Progress
@@ -137,7 +151,7 @@ const AppSidebar = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-sm" 
-                  onClick={() => navigate('/board?due=overdue')}
+                  onClick={() => handleNavigation('/board?due=overdue')}
                 >
                   <span className="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
                   Overdue
@@ -153,11 +167,15 @@ const AppSidebar = () => {
           className="flex items-center space-x-3 cursor-pointer" 
           onClick={() => setIsAdminPanelOpen(true)}
         >
-          <UserAvatar src={currentUser.avatar} name={currentUser.name} size="sm" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">{currentUser.name}</p>
-            <p className="text-xs text-gray-500 truncate">{currentUser.role}</p>
-          </div>
+          {currentUser && (
+            <>
+              <UserAvatar src={currentUser.avatar} name={currentUser.name} size="sm" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{currentUser.name}</p>
+                <p className="text-xs text-gray-500 truncate">{currentUser.role}</p>
+              </div>
+            </>
+          )}
           <Shield className="h-5 w-5 text-blue-600" />
         </div>
       </div>
