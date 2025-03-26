@@ -6,17 +6,21 @@ import TaskModal from '@/components/modals/TaskModal';
 import NewTaskModal from '@/components/modals/NewTaskModal';
 import { Button } from '@/components/ui/button';
 import { useProject, TaskStatus } from '@/contexts/ProjectContext';
-import { Plus, Filter, SlidersHorizontal } from 'lucide-react';
+import { Plus, Filter, SlidersHorizontal, AlarmClockOff } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SprintSelector from '@/components/sprint/SprintSelector';
 import StoryPointsInfo from '@/components/dashboard/StoryPointsInfo';
+import { useToast } from '@/components/ui/use-toast';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const Board = () => {
+  const { toast } = useToast();
   const { currentProject, tasks } = useProject();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>('todo');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<{
     priority?: string;
     status?: string;
@@ -29,22 +33,27 @@ const Board = () => {
   
   // Process URL query parameters for filtering
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const filters: any = {};
-    
-    if (params.has('priority')) filters.priority = params.get('priority');
-    if (params.has('status')) filters.status = params.get('status');
-    if (params.has('assignee')) filters.assignee = params.get('assignee');
-    if (params.has('task')) {
-      filters.taskId = params.get('task');
-      const task = tasks.find(t => t.id === params.get('task'));
-      if (task) {
-        setSelectedTaskId(task.id);
-        setIsTaskModalOpen(true);
+    try {
+      const params = new URLSearchParams(location.search);
+      const filters: any = {};
+      
+      if (params.has('priority')) filters.priority = params.get('priority');
+      if (params.has('status')) filters.status = params.get('status');
+      if (params.has('assignee')) filters.assignee = params.get('assignee');
+      if (params.has('task')) {
+        filters.taskId = params.get('task');
+        const task = tasks.find(t => t.id === params.get('task'));
+        if (task) {
+          setSelectedTaskId(task.id);
+          setIsTaskModalOpen(true);
+        }
       }
+      
+      setActiveFilters(filters);
+    } catch (err) {
+      console.error("Error processing filters:", err);
+      setError("Failed to load filters. Please refresh the page.");
     }
-    
-    setActiveFilters(filters);
   }, [location.search, tasks]);
   
   if (!currentProject) {
@@ -54,7 +63,7 @@ const Board = () => {
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-2">No Project Selected</h2>
             <p className="text-gray-500 mb-4">Please select a project from the dashboard</p>
-            <Button onClick={() => navigate('/')}>
+            <Button onClick={() => navigate('/dashboard')}>
               Go to Dashboard
             </Button>
           </div>
@@ -64,27 +73,51 @@ const Board = () => {
   }
   
   const handleTaskClick = (taskId: string) => {
-    setSelectedTaskId(taskId);
-    setIsTaskModalOpen(true);
-    
-    // Update URL without triggering page reload
-    const url = new URL(window.location.href);
-    url.searchParams.set('task', taskId);
-    window.history.pushState({}, '', url);
+    try {
+      setSelectedTaskId(taskId);
+      setIsTaskModalOpen(true);
+      
+      // Update URL without triggering page reload
+      const url = new URL(window.location.href);
+      url.searchParams.set('task', taskId);
+      window.history.pushState({}, '', url);
+    } catch (err) {
+      console.error("Error handling task click:", err);
+      toast({
+        title: "Error",
+        description: "Failed to open task details. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   const handleAddTask = (status: TaskStatus) => {
-    setNewTaskStatus(status);
-    setIsNewTaskModalOpen(true);
+    try {
+      setNewTaskStatus(status);
+      setIsNewTaskModalOpen(true);
+    } catch (err) {
+      console.error("Error handling add task:", err);
+      toast({
+        title: "Error",
+        description: "Failed to open the new task form. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   const handleCloseTaskModal = () => {
-    setIsTaskModalOpen(false);
-    
-    // Remove task parameter from URL
-    const url = new URL(window.location.href);
-    url.searchParams.delete('task');
-    window.history.pushState({}, '', url);
+    try {
+      setIsTaskModalOpen(false);
+      
+      // Remove task parameter from URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('task');
+      window.history.pushState({}, '', url);
+    } catch (err) {
+      console.error("Error closing task modal:", err);
+      // Still try to close the modal even if URL update fails
+      setIsTaskModalOpen(false);
+    }
   };
   
   const clearFilters = () => {
@@ -112,6 +145,14 @@ const Board = () => {
           </Button>
         </div>
       </div>
+      
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlarmClockOff className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
         <div className="lg:col-span-3">

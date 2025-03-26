@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Calendar, 
   LayoutDashboard, 
@@ -23,6 +23,7 @@ import Logo from '@/components/ui/Logo';
 
 const AppSidebar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentProject, users } = useProject();
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
@@ -34,7 +35,7 @@ const AppSidebar = () => {
     {
       name: 'Dashboard',
       icon: <LayoutDashboard className="h-5 w-5" />,
-      path: '/',
+      path: '/dashboard',
     },
     {
       name: 'Board',
@@ -62,6 +63,10 @@ const AppSidebar = () => {
       path: '/settings',
     },
   ];
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
   
   return (
     <div className="w-64 border-r border-gray-200 bg-white h-full flex flex-col">
@@ -81,8 +86,8 @@ const AppSidebar = () => {
             {mainRoutes.map((route) => (
               <Button
                 key={route.path}
-                variant="ghost"
-                className={`w-full justify-start ${window.location.pathname === route.path ? 'bg-gray-100' : ''}`}
+                variant={isActive(route.path) ? "default" : "ghost"}
+                className="w-full justify-start"
                 onClick={() => navigate(route.path)}
               >
                 {route.icon}
@@ -116,7 +121,7 @@ const AppSidebar = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-sm" 
-                  onClick={() => navigate('/board?assignee=current')}
+                  onClick={() => navigate('/board?assignee=user-1')}
                 >
                   <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
                   Assigned to me

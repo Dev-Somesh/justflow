@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // Type definitions
 export type TaskStatus = 'todo' | 'in-progress' | 'done';
@@ -155,17 +156,95 @@ interface ProjectProviderProps {
   children: ReactNode;
 }
 
+// Local storage keys
+const STORAGE_KEYS = {
+  PROJECTS: 'justflow_projects',
+  CURRENT_PROJECT: 'justflow_current_project'
+};
+
 export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) => {
-  // Mock data for projects
-  const [projects, setProjects] = useState<Project[]>([
-    // Add some initial projects here...
+  // Initialize with demo data or load from localStorage
+  const initialProjects: Project[] = [
     {
       id: 'project-1',
       name: 'JustFlow App',
       description: 'Project management tool for agile teams',
-      tasks: [],
-      sprints: [],
-      epics: [],
+      tasks: [
+        {
+          id: 'task-1',
+          title: 'Design landing page',
+          description: 'Create the design for the landing page with modern UI elements',
+          status: 'todo',
+          priority: 'high',
+          assigneeId: 'user-2',
+          createdAt: '2023-05-15T10:00:00Z',
+          labels: [{ id: 'label-5', name: 'Design', color: '#9b59b6' }],
+          comments: [],
+          timeRecords: [],
+          childTaskIds: [],
+          projectId: 'project-1',
+          storyPoints: 5
+        },
+        {
+          id: 'task-2',
+          title: 'Setup authentication',
+          description: 'Implement user authentication system with email and social login',
+          status: 'in-progress',
+          priority: 'high',
+          assigneeId: 'user-1',
+          createdAt: '2023-05-16T09:30:00Z',
+          labels: [{ id: 'label-2', name: 'Feature', color: '#3498db' }],
+          comments: [],
+          timeRecords: [],
+          childTaskIds: [],
+          projectId: 'project-1',
+          storyPoints: 8
+        },
+        {
+          id: 'task-3',
+          title: 'Fix navigation bug',
+          description: 'Fix the navigation bug where users are redirected to wrong page',
+          status: 'done',
+          priority: 'medium',
+          assigneeId: 'user-1',
+          createdAt: '2023-05-14T14:20:00Z',
+          labels: [{ id: 'label-1', name: 'Bug', color: '#e74c3c' }],
+          comments: [],
+          timeRecords: [],
+          childTaskIds: [],
+          projectId: 'project-1',
+          storyPoints: 3
+        }
+      ],
+      sprints: [
+        {
+          id: 'sprint-1',
+          name: 'Sprint 1',
+          startDate: '2023-05-01T00:00:00Z',
+          endDate: '2023-05-14T23:59:59Z',
+          goal: 'Establish core functionality',
+          status: 'completed'
+        },
+        {
+          id: 'sprint-2',
+          name: 'Sprint 2',
+          startDate: '2023-05-15T00:00:00Z',
+          endDate: '2023-05-28T23:59:59Z',
+          goal: 'Enhance user experience',
+          status: 'active'
+        }
+      ],
+      epics: [
+        {
+          id: 'epic-1',
+          title: 'User Management',
+          name: 'User Management',
+          description: 'All features related to user management including authentication',
+          status: 'active',
+          createdAt: '2023-04-01T10:00:00Z',
+          color: '#3498db'
+        }
+      ],
       dueDate: '2024-02-01',
       team: [
         {
@@ -191,7 +270,30 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         },
       ],
     },
-  ]);
+  ];
+
+  // Load projects from localStorage if available
+  const loadProjects = (): Project[] => {
+    try {
+      const savedProjects = localStorage.getItem(STORAGE_KEYS.PROJECTS);
+      return savedProjects ? JSON.parse(savedProjects) : initialProjects;
+    } catch (error) {
+      console.error('Error loading projects from localStorage:', error);
+      return initialProjects;
+    }
+  };
+
+  // Mock data for projects
+  const [projects, setProjects] = useState<Project[]>(loadProjects);
+
+  // Save projects to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+    } catch (error) {
+      console.error('Error saving projects to localStorage:', error);
+    }
+  }, [projects]);
 
   // Mock data for users
   const [users] = useState<User[]>([
@@ -227,8 +329,28 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     { id: 'label-5', name: 'Design', color: '#9b59b6' },
   ]);
 
+  // Load current project ID from localStorage
+  const loadCurrentProjectId = (): string | null => {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.CURRENT_PROJECT) || 'project-1';
+    } catch {
+      return 'project-1';
+    }
+  };
+
   // Current selected project
-  const [currentProjectId, setCurrentProjectId] = useState<string | null>('project-1');
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(loadCurrentProjectId);
+
+  // Save current project ID to localStorage when it changes
+  useEffect(() => {
+    try {
+      if (currentProjectId) {
+        localStorage.setItem(STORAGE_KEYS.CURRENT_PROJECT, currentProjectId);
+      }
+    } catch (error) {
+      console.error('Error saving current project ID to localStorage:', error);
+    }
+  }, [currentProjectId]);
 
   // Computed current project
   const currentProject = currentProjectId
@@ -264,29 +386,35 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
   // Update the addTask function to include projectId
   const addTask = (projectId: string, task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'labels' | 'timeRecords' | 'childTaskIds' | 'projectId'>) => {
-    setProjects(prevProjects => {
-      return prevProjects.map(project => {
-        if (project.id === projectId) {
-          return {
-            ...project,
-            tasks: [
-              ...project.tasks,
-              {
-                ...task,
-                id: `task-${Date.now()}`,
-                createdAt: new Date().toISOString(),
-                comments: [],
-                labels: [],
-                timeRecords: [],
-                childTaskIds: [],
-                projectId: projectId, // Explicitly set projectId to match the project
-              },
-            ],
-          };
-        }
-        return project;
+    try {
+      const newTask: Task = {
+        ...task,
+        id: `task-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        comments: [],
+        labels: [],
+        timeRecords: [],
+        childTaskIds: [],
+        projectId: projectId,
+      };
+      
+      setProjects(prevProjects => {
+        return prevProjects.map(project => {
+          if (project.id === projectId) {
+            return {
+              ...project,
+              tasks: [...project.tasks, newTask],
+            };
+          }
+          return project;
+        });
       });
-    });
+      
+      return newTask.id;
+    } catch (error) {
+      console.error("Error adding task:", error);
+      throw new Error("Failed to add task. Please try again.");
+    }
   };
 
   // Update task
@@ -466,8 +594,8 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
   // Sprint Management
   const addSprint = (projectId: string, sprint: Omit<Sprint, 'id'>) => {
-    setProjects(prevProjects =>
-      prevProjects.map(project => {
+    setProjects(prevProjects => {
+      return prevProjects.map(project => {
         if (project.id === projectId) {
           // If setting this sprint as active, set other sprints as completed
           let updatedSprints = [...project.sprints];
@@ -489,8 +617,8 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
           };
         }
         return project;
-      })
-    );
+      });
+    });
   };
 
   const updateSprint = (projectId: string, sprintId: string, updates: Partial<Sprint>) => {
@@ -788,4 +916,3 @@ export const useProject = () => {
   }
   return context;
 };
-

@@ -86,6 +86,13 @@ const App = () => (
               </ProtectedRoute>
             } />
             
+            {/* Redirect / to /dashboard when authenticated */}
+            <Route path="/" element={
+              sessionStorage.getItem('loginSuccess') === 'true' ? 
+                <Navigate to="/dashboard" replace /> : 
+                <LandingPage />
+            } />
+            
             {/* Redirect /index to /dashboard */}
             <Route path="/index" element={<Navigate to="/dashboard" replace />} />
             
