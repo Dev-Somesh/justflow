@@ -69,7 +69,10 @@ const AppSidebar = () => {
     return location.pathname === path;
   }, [location.pathname]);
   
-  const handleNavigation = useCallback((path: string) => {
+  const handleNavigation = useCallback((path: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+    }
     try {
       navigate(path);
     } catch (error) {
@@ -102,7 +105,7 @@ const AppSidebar = () => {
                 key={route.path}
                 variant={isActive(route.path) ? "default" : "ghost"}
                 className="w-full justify-start"
-                onClick={() => handleNavigation(route.path)}
+                onClick={(e) => handleNavigation(route.path, e)}
               >
                 {route.icon}
                 <span className="ml-3">{route.name}</span>
@@ -127,7 +130,7 @@ const AppSidebar = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-sm" 
-                  onClick={() => handleNavigation('/board?priority=high')}
+                  onClick={(e) => handleNavigation('/board?priority=high', e)}
                 >
                   <span className="w-2 h-2 rounded-full bg-red-500 mr-2"></span>
                   High Priority
@@ -135,7 +138,7 @@ const AppSidebar = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-sm" 
-                  onClick={() => handleNavigation('/board?assignee=user-1')}
+                  onClick={(e) => handleNavigation('/board?assignee=user-1', e)}
                 >
                   <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
                   Assigned to me
@@ -143,7 +146,7 @@ const AppSidebar = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-sm" 
-                  onClick={() => handleNavigation('/board?status=in-progress')}
+                  onClick={(e) => handleNavigation('/board?status=in-progress', e)}
                 >
                   <span className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
                   In Progress
@@ -151,7 +154,7 @@ const AppSidebar = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-sm" 
-                  onClick={() => handleNavigation('/board?due=overdue')}
+                  onClick={(e) => handleNavigation('/board?due=overdue', e)}
                 >
                   <span className="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
                   Overdue

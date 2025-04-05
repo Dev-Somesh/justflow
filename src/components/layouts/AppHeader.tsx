@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Calendar, 
   LayoutDashboard, 
@@ -26,6 +26,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 const AppHeader = () => {
   const navigate = useNavigate();
+  const location = useLocation(); // Added useLocation to properly detect current path
   const { toast } = useToast();
   const { currentProject, tasks } = useProject();
   
@@ -82,7 +83,12 @@ const AppHeader = () => {
   ];
   
   const isActive = (path: string) => {
-    return window.location.pathname === path;
+    return location.pathname === path; // Use location.pathname for accurate route matching
+  };
+  
+  const handleNavigation = (path: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    navigate(path);
   };
   
   return (
@@ -107,7 +113,7 @@ const AppHeader = () => {
               variant={isActive(route.path) ? "default" : "ghost"}
               size="sm"
               className="gap-2"
-              onClick={() => navigate(route.path)}
+              onClick={(e) => handleNavigation(route.path, e)}
             >
               {route.icon}
               <span className="hidden lg:inline">{route.name}</span>
@@ -119,7 +125,12 @@ const AppHeader = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <Button variant="outline" size="icon" className="relative" onClick={() => navigate('/board?priority=high')}>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="relative" 
+                  onClick={(e) => handleNavigation('/board?priority=high', e)}
+                >
                   <AlertTriangle className="h-5 w-5 text-amber-500" />
                   {highPriorityCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
@@ -137,7 +148,12 @@ const AppHeader = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <Button variant="outline" size="icon" className="relative" onClick={() => navigate('/board?status=in-progress')}>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="relative" 
+                  onClick={(e) => handleNavigation('/board?status=in-progress', e)}
+                >
                   <Clock className="h-5 w-5 text-blue-500" />
                   {pendingTasksCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
@@ -155,7 +171,11 @@ const AppHeader = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <Button variant="outline" size="icon" onClick={() => navigate('/help')}>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={(e) => handleNavigation('/help', e)}
+                >
                   <HelpCircle className="h-5 w-5 text-gray-500" />
                 </Button>
               </TooltipTrigger>

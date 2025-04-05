@@ -47,7 +47,11 @@ const App = () => (
                 <Navigate to="/dashboard" replace /> : 
                 <LandingPage />
             } />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={
+              sessionStorage.getItem('loginSuccess') === 'true' ? 
+                <Navigate to="/dashboard" replace /> : 
+                <Login />
+            } />
             <Route path="/faqs" element={<FAQs />} />
             <Route path="/guides" element={<UserGuides />} />
             <Route path="/api-docs" element={<APIDocumentation />} />
