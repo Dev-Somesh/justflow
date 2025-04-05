@@ -20,11 +20,11 @@ const VelocityChart = () => {
       ];
     }
     
-    // Get all tasks with sprints
-    const tasksBySprint = tasks.filter(task => task.sprintId);
+    // Get all tasks with sprints - filter out undefined tasks and ensure they have sprintId
+    const tasksBySprint = tasks.filter(task => task && task.sprintId);
     
     // Get all sprints in the project
-    const sprints = currentProject.sprints;
+    const sprints = currentProject.sprints || [];
     
     if (sprints.length === 0 || tasksBySprint.length === 0) {
       // Return empty state with a note
@@ -35,19 +35,21 @@ const VelocityChart = () => {
     
     // Generate data for each sprint
     return sprints.map(sprint => {
+      if (!sprint) return { name: 'Unknown Sprint', planned: 0, completed: 0 };
+      
       // Get all tasks for this sprint
-      const sprintTasks = tasks.filter(task => task.sprintId === sprint.id);
+      const sprintTasks = tasks.filter(task => task && task.sprintId === sprint.id);
       
       // Calculate points planned
       const planned = sprintTasks.reduce((sum, task) => sum + (task.storyPoints || 0), 0);
       
       // Calculate points completed (tasks with status done)
       const completed = sprintTasks
-        .filter(task => task.status === 'done')
+        .filter(task => task && task.status === 'done')
         .reduce((sum, task) => sum + (task.storyPoints || 0), 0);
       
       return {
-        name: sprint.name,
+        name: sprint.name || `Sprint ${sprint.id}`,
         planned,
         completed,
       };
@@ -64,7 +66,7 @@ const VelocityChart = () => {
   }
   
   // Show a disclaimer if there's no real data
-  const showDisclaimer = tasks.length === 0 || !tasks.some(task => task.sprintId);
+  const showDisclaimer = !tasks.length || !tasks.some(task => task && task.sprintId);
   
   const chartConfig = {
     planned: { label: "Planned Points", color: "#8884d8" },

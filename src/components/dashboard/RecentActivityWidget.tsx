@@ -44,50 +44,62 @@ const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({
     
     // Create activities from tasks
     tasks.forEach(task => {
+      if (!task) return; // Skip if task is undefined
+      
       // Comments as activities
-      task.comments.forEach(comment => {
-        activities.push({
-          id: `activity-comment-${comment.id}`,
-          type: 'comment',
-          userId: comment.userId,
-          taskId: task.id,
-          timestamp: comment.createdAt,
-          details: {
-            content: comment.content
-          }
+      if (task.comments && Array.isArray(task.comments)) {
+        task.comments.forEach(comment => {
+          if (!comment) return; // Skip if comment is undefined
+          
+          activities.push({
+            id: `activity-comment-${comment.id}`,
+            type: 'comment',
+            userId: comment.userId,
+            taskId: task.id,
+            timestamp: comment.createdAt,
+            details: {
+              content: comment.content
+            }
+          });
         });
-      });
+      }
       
       // Time records as activities
-      task.timeRecords.forEach(record => {
+      if (task.timeRecords && Array.isArray(task.timeRecords)) {
+        task.timeRecords.forEach(record => {
+          if (!record) return; // Skip if record is undefined
+          
+          activities.push({
+            id: `activity-time-${record.id}`,
+            type: 'time_record',
+            userId: record.userId,
+            taskId: task.id,
+            timestamp: record.endTime || record.startTime,
+            details: {
+              duration: record.duration,
+              note: record.note
+            }
+          });
+        });
+      }
+      
+      // Task creation as activity (make sure task has createdAt)
+      if (task.createdAt) {
         activities.push({
-          id: `activity-time-${record.id}`,
-          type: 'time_record',
-          userId: record.userId,
+          id: `activity-create-${task.id}`,
+          type: 'task_created',
+          userId: task.assigneeId || 'user-1',
           taskId: task.id,
-          timestamp: record.endTime || record.startTime,
+          timestamp: task.createdAt,
           details: {
-            duration: record.duration,
-            note: record.note
+            title: task.title,
+            priority: task.priority
           }
         });
-      });
-      
-      // Task creation as activity
-      activities.push({
-        id: `activity-create-${task.id}`,
-        type: 'task_created',
-        userId: task.assigneeId || 'user-1',
-        taskId: task.id,
-        timestamp: task.createdAt,
-        details: {
-          title: task.title,
-          priority: task.priority
-        }
-      });
+      }
       
       // Mock status change for demo (only for done tasks)
-      if (task.status === 'done') {
+      if (task.status === 'done' && task.createdAt) {
         activities.push({
           id: `activity-status-${task.id}`,
           type: 'status_change',
@@ -126,7 +138,7 @@ const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({
   };
   
   const getActivityText = (activity: Activity) => {
-    const task = tasks.find(t => t.id === activity.taskId);
+    const task = tasks.find(t => t && t.id === activity.taskId);
     const user = getUserById(activity.userId);
     
     switch (activity.type) {

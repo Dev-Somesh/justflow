@@ -23,16 +23,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
   const { getUserById } = useProject();
   
   // Calculate progress
-  const totalTasks = project.tasks.length;
-  const completedTasks = project.tasks.filter(task => task.status === 'done').length;
+  const totalTasks = project.tasks ? project.tasks.length : 0;
+  const completedTasks = project.tasks ? project.tasks.filter(task => task && task.status === 'done').length : 0;
   const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
   
-  // Get unique assignees
-  const assigneeIds = [...new Set(project.tasks.map(task => task.assigneeId).filter(Boolean))];
-  const assignees = assigneeIds.map(id => getUserById(id!)).filter(Boolean);
+  // Get unique assignees - make sure to filter out undefined tasks and assignees
+  const assigneeIds = project.tasks ? 
+    [...new Set(project.tasks
+      .filter(task => task && task.assigneeId)
+      .map(task => task.assigneeId))] 
+    : [];
+  
+  const assignees = assigneeIds.map(id => id ? getUserById(id) : null).filter(Boolean);
   
   // Get active sprint if any
-  const activeSprint = project.sprints.find(sprint => sprint.status === 'active');
+  const activeSprint = project.sprints ? project.sprints.find(sprint => sprint && sprint.status === 'active') : undefined;
   
   // Calculate sprint status if active
   let sprintStatus: {color: string, label: string} | null = null;
@@ -59,8 +64,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
     }
   }
 
-  // Count high priority tasks
-  const highPriorityTasks = project.tasks.filter(task => task.priority === 'high').length;
+  // Count high priority tasks - ensure task is defined before checking priority
+  const highPriorityTasks = project.tasks ? 
+    project.tasks.filter(task => task && task.priority === 'high').length : 0;
   
   return (
     <Card 
@@ -108,15 +114,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
           <div className="grid grid-cols-3 gap-2 mt-2">
             <div className="bg-gray-100 rounded p-2 text-center">
               <div className="text-xs text-gray-500">To Do</div>
-              <div className="font-medium">{project.tasks.filter(t => t.status === 'todo').length}</div>
+              <div className="font-medium">
+                {project.tasks ? project.tasks.filter(t => t && t.status === 'todo').length : 0}
+              </div>
             </div>
             <div className="bg-gray-100 rounded p-2 text-center">
               <div className="text-xs text-gray-500">In Progress</div>
-              <div className="font-medium">{project.tasks.filter(t => t.status === 'in-progress').length}</div>
+              <div className="font-medium">
+                {project.tasks ? project.tasks.filter(t => t && t.status === 'in-progress').length : 0}
+              </div>
             </div>
             <div className="bg-gray-100 rounded p-2 text-center">
               <div className="text-xs text-gray-500">Done</div>
-              <div className="font-medium">{project.tasks.filter(t => t.status === 'done').length}</div>
+              <div className="font-medium">
+                {project.tasks ? project.tasks.filter(t => t && t.status === 'done').length : 0}
+              </div>
             </div>
           </div>
         </div>

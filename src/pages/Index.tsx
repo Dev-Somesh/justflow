@@ -25,12 +25,15 @@ const Index = () => {
   
   // Simple authentication check - in a real app, this would check for a token
   useEffect(() => {
+    console.log("Dashboard page loaded, checking authentication");
     // Check if user was redirected from login page
     const loginSuccess = sessionStorage.getItem('loginSuccess');
     
     if (loginSuccess === 'true') {
+      console.log("User is authenticated");
       setIsAuthenticated(true);
     } else {
+      console.log("User is not authenticated, navigating to login");
       navigate('/login');
     }
   }, [navigate]);
@@ -39,9 +42,9 @@ const Index = () => {
   const firstProject = projects[0] || null;
 
   // Calculate task stats for the dashboard
-  const todoCount = tasks.filter(t => t.status === 'todo').length;
-  const inProgressCount = tasks.filter(t => t.status === 'in-progress').length;
-  const doneCount = tasks.filter(t => t.status === 'done').length;
+  const todoCount = tasks.filter(t => t && t.status === 'todo').length;
+  const inProgressCount = tasks.filter(t => t && t.status === 'in-progress').length;
+  const doneCount = tasks.filter(t => t && t.status === 'done').length;
   const totalTasks = tasks.length;
   const progressPercentage = totalTasks > 0 ? Math.round((doneCount / totalTasks) * 100) : 0;
   
@@ -69,8 +72,17 @@ const Index = () => {
 
   // If not authenticated, show nothing while redirecting
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Checking authentication...</h2>
+          <p className="text-gray-500">You will be redirected to login if needed.</p>
+        </div>
+      </div>
+    );
   }
+
+  console.log("Rendering dashboard with authenticated user");
 
   return (
     <AppLayout>
@@ -130,10 +142,10 @@ const Index = () => {
                 </div>
               </div>
               
-              {tasks.some(t => t.priority === 'high') && (
+              {tasks.some(t => t && t.priority === 'high') && (
                 <div className="mt-4 flex items-center text-sm text-amber-600">
                   <span className="inline-block w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
-                  <span>{tasks.filter(t => t.priority === 'high').length} high priority</span>
+                  <span>{tasks.filter(t => t && t.priority === 'high').length} high priority</span>
                 </div>
               )}
               

@@ -19,7 +19,7 @@ const SprintBurndownChart = () => {
   }
   
   // Get sprint tasks
-  const sprintTasks = currentProject.tasks.filter(task => task.sprintId === activeSprint.id);
+  const sprintTasks = currentProject.tasks.filter(task => task && task.sprintId === activeSprint.id);
   
   // Calculate total story points
   const totalStoryPoints = sprintTasks.reduce((total, task) => total + (task.storyPoints || 0), 0);
@@ -70,10 +70,15 @@ const getActualBurndown = (date: Date, tasks: any[], totalPoints: number) => {
     return null; // No data for future dates
   }
   
+  // Make sure we have tasks and the first task has createdAt
+  if (!tasks.length || !tasks[0] || !tasks[0].createdAt) {
+    return totalPoints; // Return total points if no tasks or no createdAt
+  }
+  
   // Simple simulation of progress over time
   const daysPassed = differenceInDays(date, new Date(tasks[0].createdAt));
   const completedTasks = tasks.filter(task => 
-    task.status === 'done' && new Date(task.createdAt) <= date
+    task && task.status === 'done' && task.createdAt && new Date(task.createdAt) <= date
   );
   
   const completedPoints = completedTasks.reduce(
