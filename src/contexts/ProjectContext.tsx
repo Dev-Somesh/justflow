@@ -116,6 +116,12 @@ export interface TaskFilters {
   sprintId?: string[];
 }
 
+export interface SprintCapacity {
+  totalStoryPoints: number;
+  assignedStoryPoints: number;
+  remainingCapacity: number;
+}
+
 export interface ProjectContextType {
   users: User[];
   projects: Project[];
@@ -159,8 +165,9 @@ export interface ProjectContextType {
   updateEpic: (projectId: string, epicId: string, updates: Partial<Epic>) => void;
   assignTaskToEpic: (projectId: string, taskId: string, epicId: string) => void;
   getTasksBySprint: (sprintId: string) => Task[];
-  getSprintCapacity: (sprintId: string) => number;
+  getSprintCapacity: (sprintId: string) => SprintCapacity;
   addTask: (projectId: string, task: Omit<Task, 'id'>) => void;
+  addTaskToSprint: (taskId: string, sprintId: string) => void;
 }
 
 const initialUsers: User[] = [
@@ -468,9 +475,23 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     return allTasks;
   };
 
-  const getSprintCapacity = (sprintId: string) => {
+  const getSprintCapacity = (sprintId: string): SprintCapacity => {
     const tasks = getTasksBySprint(sprintId);
-    return tasks.reduce((total, task) => total + task.storyPoints, 0);
+    const totalPoints = tasks.reduce((total, task) => total + task.storyPoints, 0);
+    
+    let capacity = 0;
+    projects.forEach(project => {
+      const sprint = project.sprints.find(s => s.id === sprintId);
+      if (sprint && sprint.storyPoints) {
+        capacity = sprint.storyPoints;
+      }
+    });
+    
+    return {
+      totalStoryPoints: capacity,
+      assignedStoryPoints: totalPoints,
+      remainingCapacity: capacity - totalPoints
+    };
   };
 
   const addEpic = (projectId: string, epic: Omit<Epic, 'id'>) => {
@@ -839,6 +860,15 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  const addTaskToSprint = (taskId: string, sprintId: string) => {
+    projects.forEach(project => {
+      const taskIndex = project.tasks.findIndex(t => t.id === taskId);
+      if (taskIndex >= 0) {
+        assignTaskToSprint(project.id, taskId, sprintId);
+      }
+    });
+  };
+
   return (
     <ProjectContext.Provider value={{
       users,
@@ -885,6 +915,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       getTasksBySprint,
       getSprintCapacity,
       addTask,
+      addTaskToSprint,
     }}>
       {children}
     </ProjectContext.Provider>

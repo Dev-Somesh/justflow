@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
-import type { TaskFilters as TaskFiltersType } from '@/contexts/ProjectContext';
+import type { TaskFilters } from '@/contexts/ProjectContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,18 +31,17 @@ import {
   User
 } from 'lucide-react';
 import { format } from 'date-fns';
-import type { TaskFilters as TaskFiltersType } from '@/contexts/ProjectContext';
 import { DateRange } from 'react-day-picker';
 
 interface TaskFiltersProps {
   projectId: string;
-  onFilterChange: (search: string, filters: TaskFiltersType) => void;
+  onFilterChange: (search: string, filters: TaskFilters) => void;
 }
 
 const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) => {
   const { users, availableLabels, getSprints } = useProject();
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState<TaskFiltersType>({});
+  const [filters, setFilters] = useState<TaskFilters>({});
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
   
@@ -510,7 +509,7 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
             <Badge 
               variant="outline" 
               className="flex items-center gap-1 cursor-pointer hover:bg-gray-100"
-              onClick={() => handleDateRangeSelect({})}
+              onClick={() => handleDateRangeSelect(undefined)}
             >
               <CalendarIcon className="h-3 w-3 mr-1" />
               Due: {filters.dueDateFrom && format(new Date(filters.dueDateFrom), 'MMM d')}

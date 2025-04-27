@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useProject, Sprint, Task } from '@/contexts/ProjectContext';
+import { useProject, Sprint, Task, SprintCapacity } from '@/contexts/ProjectContext';
 import { 
   Card, 
   CardContent, 
@@ -24,7 +24,7 @@ import { format } from 'date-fns';
 
 interface SprintPlanningProps {
   projectId: string;
-  sprintId?: string; // If provided, edit mode, otherwise create mode
+  sprintId?: string;
 }
 
 interface SprintCapacity {
@@ -54,7 +54,7 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
     .filter(task => !task.sprintId);
   
   const capacity: SprintCapacity = currentSprint 
-    ? getSprintCapacity(currentSprint.id) as SprintCapacity
+    ? getSprintCapacity(currentSprint.id)
     : { totalStoryPoints: 0, assignedStoryPoints: 0, remainingCapacity: 0 };
   
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -84,8 +85,13 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
   const handleSubmit = (values: TaskFormValues) => {
     try {
       createTask(projectId, {
-        ...values,
+        title: values.title, // Ensure title is explicitly set
         description: values.description || "",
+        status: values.status,
+        priority: values.priority,
+        storyPoints: values.storyPoints,
+        assigneeId: values.assigneeId,
+        sprintId: values.sprintId,
         labelIds: selectedLabels,
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
       });

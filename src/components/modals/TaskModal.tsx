@@ -402,7 +402,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
             <TimeTracker
               taskId={task.id}
               projectId={projectId}
-              timeRecords={task.timeRecords || []}
+              timeRecords={task.timeRecords}
               onAddTimeRecord={handleAddTimeRecord}
             />
           </TabsContent>
