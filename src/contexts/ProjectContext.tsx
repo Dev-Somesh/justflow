@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // Type definitions
@@ -104,6 +103,7 @@ export interface TaskFilters {
   labelIds?: string[];
   dueDateFrom?: string;
   dueDateTo?: string;
+  sprintId?: string[];
 }
 
 // Context type
@@ -122,6 +122,8 @@ interface ProjectContextType {
   getTaskById: (taskId: string) => Task | undefined;
   getTasksByStatus: (projectId: string, status: TaskStatus) => Task[];
   updateTaskStatus: (projectId: string, taskId: string, status: TaskStatus) => void;
+  updateTaskAssignee: (projectId: string, taskId: string, assigneeId?: string) => void;
+  updateTaskSprint: (projectId: string, taskId: string, sprintId?: string) => void;
   addComment: (projectId: string, taskId: string, comment: Omit<Comment, 'id' | 'createdAt'>) => void;
   addTimeRecord: (projectId: string, taskId: string, record: Omit<TimeRecord, 'id'>) => void;
   getUserById: (userId: string) => User | undefined;
@@ -470,6 +472,14 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     updateTask(projectId, taskId, { status });
   };
 
+  const updateTaskAssignee = (projectId: string, taskId: string, assigneeId?: string) => {
+    updateTask(projectId, taskId, { assigneeId });
+  };
+
+  const updateTaskSprint = (projectId: string, taskId: string, sprintId?: string) => {
+    updateTask(projectId, taskId, { sprintId });
+  };
+
   // Add a comment to a task
   const addComment = (projectId: string, taskId: string, comment: Omit<Comment, 'id' | 'createdAt'>) => {
     setProjects(prevProjects =>
@@ -564,6 +574,15 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
         if (filters.assigneeId.includes('unassigned')) {
           if (task.assigneeId) return false;
         } else if (!task.assigneeId || !filters.assigneeId.includes(task.assigneeId)) {
+          return false;
+        }
+      }
+
+      // Filter by sprintId
+      if (filters.sprintId && filters.sprintId.length > 0) {
+        if (filters.sprintId.includes('none')) {
+          if (task.sprintId) return false;
+        } else if (!task.sprintId || !filters.sprintId.includes(task.sprintId)) {
           return false;
         }
       }
@@ -879,6 +898,8 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
     getTaskById,
     getTasksByStatus,
     updateTaskStatus,
+    updateTaskAssignee,
+    updateTaskSprint,
     addComment,
     addTimeRecord,
     getUserById,

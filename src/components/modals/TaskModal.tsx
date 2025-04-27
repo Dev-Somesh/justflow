@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -196,7 +195,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
                       {users.map(user => (
                         <SelectItem key={user.id} value={user.id}>
                           <div className="flex items-center gap-2">
-                            <UserAvatar src={user.avatar} name={user.name} size="xs" />
+                            <UserAvatar src={user.avatar} name={user.name} size="sm" />
                             <span>{user.name}</span>
                           </div>
                         </SelectItem>
