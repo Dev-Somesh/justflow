@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useProject, TaskFilters } from '@/contexts/ProjectContext';
+import { useProject } from '@/contexts/ProjectContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,17 +30,19 @@ import {
   User
 } from 'lucide-react';
 import { format } from 'date-fns';
+import type { TaskFilters as TaskFiltersType } from '@/contexts/ProjectContext';
+import { DateRange } from 'react-day-picker';
 
 interface TaskFiltersProps {
   projectId: string;
-  onFilterChange: (search: string, filters: TaskFilters) => void;
+  onFilterChange: (search: string, filters: TaskFiltersType) => void;
 }
 
 const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) => {
   const { users, availableLabels, getSprints } = useProject();
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState<TaskFilters>({});
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [filters, setFilters] = useState<TaskFiltersType>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
   
   // Get all sprints for the project
@@ -68,7 +69,7 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
   const handleClearFilters = () => {
     setSearch('');
     setFilters({});
-    setDateRange({});
+    setDateRange(undefined);
   };
   
   // Toggle status filter
@@ -147,12 +148,12 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
   };
   
   // Update date range filter
-  const handleDateRangeSelect = (range: typeof dateRange) => {
+  const handleDateRangeSelect = (range: DateRange | undefined) => {
     setDateRange(range);
     setFilters(prev => ({
       ...prev,
-      dueDateFrom: range.from ? format(range.from, 'yyyy-MM-dd') : undefined,
-      dueDateTo: range.to ? format(range.to, 'yyyy-MM-dd') : undefined
+      dueDateFrom: range?.from ? format(range.from, 'yyyy-MM-dd') : undefined,
+      dueDateTo: range?.to ? format(range.to, 'yyyy-MM-dd') : undefined
     }));
   };
   
@@ -378,18 +379,18 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
               <div className="p-3 border-b">
                 <div className="flex justify-between items-center">
                   <h3 className="text-sm font-medium">Date Range</h3>
-                  {(dateRange.from || dateRange.to) && (
+                  {(dateRange?.from || dateRange?.to) && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => handleDateRangeSelect({})}
+                      onClick={() => handleDateRangeSelect(undefined)}
                       className="h-8 px-2 py-1"
                     >
                       Reset
                     </Button>
                   )}
                 </div>
-                {dateRange.from && dateRange.to ? (
+                {dateRange?.from && dateRange.to ? (
                   <div className="text-xs text-gray-500 pt-1">
                     {format(dateRange.from, 'LLL dd, y')} - {format(dateRange.to, 'LLL dd, y')}
                   </div>

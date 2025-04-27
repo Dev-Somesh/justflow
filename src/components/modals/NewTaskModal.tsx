@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -47,7 +46,7 @@ interface NewTaskModalProps {
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
+  description: z.string().optional().default(""),
   status: z.enum(["todo", "in-progress", "done"]),
   priority: z.enum(["low", "medium", "high"]),
   storyPoints: z.number().int().min(0),
@@ -88,6 +87,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
       // Create a new task with form values and selected labels
       createTask(projectId, {
         ...values,
+        description: values.description || "", // Ensure description is not undefined
         labelIds: selectedLabels,
       });
       

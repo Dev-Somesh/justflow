@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -74,7 +73,7 @@ const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({
             type: 'time_record',
             userId: record.userId,
             taskId: task.id,
-            timestamp: record.endTime || record.startTime,
+            timestamp: record.createdAt,
             details: {
               duration: record.duration,
               note: record.note

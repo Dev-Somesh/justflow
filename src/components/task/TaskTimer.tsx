@@ -1,156 +1,131 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlayCircle, PauseCircle, StopCircle, Clock } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
 import { useProject } from '@/contexts/ProjectContext';
+import { Play, Pause, Save, Timer } from 'lucide-react';
+import { formatDuration } from '@/lib/timeUtils';
 
 interface TaskTimerProps {
   projectId: string;
   taskId: string;
-  onTimeRecorded?: () => void;
+  onSave?: () => void;
 }
 
-const TaskTimer: React.FC<TaskTimerProps> = ({ projectId, taskId, onTimeRecorded }) => {
+const TaskTimer: React.FC<TaskTimerProps> = ({ projectId, taskId, onSave }) => {
+  const { addTimeRecord, getUserById, selectedUser } = useProject();
   const [isRunning, setIsRunning] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0); // in seconds
+  const [seconds, setSeconds] = useState(0);
+  const [note, setNote] = useState('');
   const [startTime, setStartTime] = useState<Date | null>(null);
-  const { addTimeRecord, getTaskById } = useProject();
-  const { toast } = useToast();
+  const [savedTime, setSavedTime] = useState(0);
   
-  const task = getTaskById(taskId);
-  
+  // Timer effect
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
+    let interval: NodeJS.Timeout | null = null;
     
     if (isRunning) {
       interval = setInterval(() => {
-        setElapsedTime(prev => prev + 1);
+        setSeconds(prevSeconds => prevSeconds + 1);
       }, 1000);
+    } else if (interval) {
+      clearInterval(interval);
     }
     
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isRunning]);
   
-  const formatTime = useCallback((seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }, []);
-  
-  const handleStart = useCallback(() => {
-    setIsRunning(true);
-    setStartTime(new Date());
-    toast({
-      title: "Timer started",
-      description: `Tracking time for: ${task?.title || 'Unknown task'}`,
-    });
-  }, [task, toast]);
-  
-  const handlePause = useCallback(() => {
-    setIsRunning(false);
-    toast({
-      title: "Timer paused",
-      description: `You've tracked ${formatTime(elapsedTime)} so far`,
-    });
-  }, [elapsedTime, formatTime, toast]);
-  
-  const handleStop = useCallback(() => {
-    try {
+  const handleToggleTimer = () => {
+    if (!isRunning) {
+      // Start the timer
+      setStartTime(new Date());
+      setIsRunning(true);
+    } else {
+      // Pause the timer
       setIsRunning(false);
-      
-      if (!startTime || elapsedTime <= 0 || !task) {
-        return;
-      }
-      
-      // Convert seconds to minutes for the API
-      const durationInMinutes = Math.max(1, Math.round(elapsedTime / 60));
+    }
+  };
+  
+  const handleSave = () => {
+    if (!selectedUser) return;
+    
+    try {
+      // Calculate duration in minutes
+      const durationInMinutes = Math.round(seconds / 60);
+      setSavedTime(prevSaved => prevSaved + seconds);
       
       // Record the time
       addTimeRecord(projectId, taskId, {
-        userId: 'user-1', // Default to first user for demo
-        startTime: startTime.toISOString(),
-        endTime: new Date().toISOString(),
+        userId: selectedUser,
         duration: durationInMinutes,
-        note: `Time tracked: ${formatTime(elapsedTime)}`,
+        note,
+        createdAt: new Date().toISOString(),
       });
       
-      toast({
-        title: "Time recorded",
-        description: `Recorded ${formatTime(elapsedTime)} for this task`,
-      });
-      
-      // Reset timer
-      setElapsedTime(0);
-      setStartTime(null);
-      
-      // Call callback if provided
-      if (onTimeRecorded) {
-        onTimeRecorded();
-      }
+      // Reset the timer and note
+      setSeconds(0);
+      setNote('');
+      setIsRunning(false);
+      if (onSave) onSave();
     } catch (error) {
-      console.error("Error recording time:", error);
-      toast({
-        title: "Error",
-        description: "Failed to record time. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Failed to save time record:', error);
     }
-  }, [startTime, elapsedTime, task, addTimeRecord, projectId, taskId, formatTime, toast, onTimeRecorded]);
-  
-  if (!task) {
-    return (
-      <Card>
-        <CardContent className="py-4">
-          <p className="text-center text-gray-500">Task not found</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  };
   
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          Task Timer
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pb-2">
-        <div className="text-center">
-          <div className="text-3xl font-mono font-bold">{formatTime(elapsedTime)}</div>
-          <div className="text-xs text-gray-500 mt-1">
-            {isRunning ? "Timer running" : "Timer stopped"}
-          </div>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Timer className="h-4 w-4 text-gray-500" />
+          <div className="text-2xl font-mono">{formatDuration(seconds)}</div>
         </div>
-      </CardContent>
-      <CardFooter className="flex justify-center gap-2 pt-0">
-        {!isRunning ? (
-          <Button onClick={handleStart} variant="outline" size="sm" className="gap-1">
-            <PlayCircle className="h-4 w-4 text-green-500" />
-            Start
+        
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button
+            type="button"
+            variant={isRunning ? "destructive" : "default"}
+            onClick={handleToggleTimer}
+            size="sm"
+            className="flex-1 sm:flex-none"
+          >
+            {isRunning ? (
+              <>
+                <Pause className="h-4 w-4 mr-1" />
+                Pause
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4 mr-1" />
+                Start
+              </>
+            )}
           </Button>
-        ) : (
-          <Button onClick={handlePause} variant="outline" size="sm" className="gap-1">
-            <PauseCircle className="h-4 w-4 text-amber-500" />
-            Pause
+          
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleSave}
+            disabled={seconds === 0}
+            size="sm"
+            className="flex-1 sm:flex-none"
+          >
+            <Save className="h-4 w-4 mr-1" />
+            Save
           </Button>
-        )}
-        <Button 
-          onClick={handleStop} 
-          variant="outline" 
-          size="sm" 
-          className="gap-1"
-          disabled={!isRunning && elapsedTime === 0}
-        >
-          <StopCircle className="h-4 w-4 text-red-500" />
-          Stop & Save
-        </Button>
-      </CardFooter>
-    </Card>
+        </div>
+      </div>
+      
+      <div>
+        <Input
+          placeholder="Add a note about what you worked on"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          className="w-full"
+        />
+      </div>
+    </div>
   );
 };
 

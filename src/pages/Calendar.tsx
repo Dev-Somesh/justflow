@@ -211,7 +211,6 @@ const CalendarPage: React.FC = () => {
                                         <UserAvatar 
                                           name="User" 
                                           size="sm" 
-                                          className="h-6 w-6" 
                                         />
                                       ) : (
                                         <span className="text-xs text-gray-500">Unassigned</span>
@@ -291,7 +290,6 @@ const CalendarPage: React.FC = () => {
                                         <UserAvatar 
                                           name="User" 
                                           size="sm" 
-                                          className="h-6 w-6" 
                                         />
                                       ) : (
                                         <span className="text-xs text-gray-500">Unassigned</span>

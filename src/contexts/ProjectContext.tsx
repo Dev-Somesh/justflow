@@ -9,6 +9,14 @@ export interface Project {
   sprints: Sprint[];
   createdAt: string;
   lastUpdated: string;
+  dueDate?: string;
+  team?: TeamMember[];
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
 }
 
 export interface Sprint {
@@ -18,8 +26,21 @@ export interface Sprint {
   status: 'planning' | 'active' | 'completed';
   startDate: string;
   endDate: string;
-  tasks?: string[]; // Task IDs
+  tasks?: string[];
   storyPoints?: number;
+  goal?: string;
+}
+
+export interface Epic {
+  id: string;
+  name: string;
+  description: string;
+  projectId: string;
+  status: 'planning' | 'active' | 'completed';
+  startDate: string;
+  endDate: string;
+  taskIds: string[];
+  color: string;
 }
 
 export interface User {
@@ -45,6 +66,7 @@ export interface Task {
   priority: TaskPriority;
   assigneeId?: string;
   sprintId?: string;
+  epicId?: string;
   storyPoints: number;
   createdAt: string;
   dueDate?: string;
@@ -69,9 +91,11 @@ export interface Comment {
 export interface TimeRecord {
   id: string;
   userId: string;
-  duration: number; // minutes
+  duration: number;
   note?: string;
   createdAt: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 export interface UserWorkload {
@@ -92,7 +116,6 @@ export interface TaskFilters {
   sprintId?: string[];
 }
 
-// Context type
 export interface ProjectContextType {
   users: User[];
   projects: Project[];
@@ -130,9 +153,16 @@ export interface ProjectContextType {
   getSprints: (projectId: string) => Sprint[];
   assignTaskToSprint: (projectId: string, taskId: string, sprintId: string) => void;
   removeTaskFromSprint: (projectId: string, taskId: string) => void;
+  addEpic: (projectId: string, epic: Omit<Epic, 'id'>) => void;
+  getEpics: (projectId: string) => Epic[];
+  getTasksByEpic: (epicId: string) => Task[];
+  updateEpic: (projectId: string, epicId: string, updates: Partial<Epic>) => void;
+  assignTaskToEpic: (projectId: string, taskId: string, epicId: string) => void;
+  getTasksBySprint: (sprintId: string) => Task[];
+  getSprintCapacity: (sprintId: string) => number;
+  addTask: (projectId: string, task: Omit<Task, 'id'>) => void;
 }
 
-// Initial mock data
 const initialUsers: User[] = [
   {
     id: 'user-1',
@@ -238,10 +268,16 @@ const initialProjects: Project[] = [
         endDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString(),
         tasks: ['task-1', 'task-2', 'task-3'],
         storyPoints: 10,
+        goal: 'Complete initial project setup and authentication',
       },
     ],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
+    team: [
+      { id: 'user-1', name: 'John Doe', role: 'Product Manager' },
+      { id: 'user-2', name: 'Jane Smith', role: 'Developer' },
+      { id: 'user-3', name: 'Alice Johnson', role: 'UI Designer' },
+    ],
   },
   {
     id: 'project-2',
@@ -251,26 +287,43 @@ const initialProjects: Project[] = [
     sprints: [],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
+    team: [],
   },
 ];
 
-// Create context
+const initialEpics: Epic[] = [
+  {
+    id: 'epic-1',
+    name: 'User Authentication',
+    description: 'Epic for all authentication-related tasks',
+    projectId: 'project-1',
+    status: 'active',
+    startDate: new Date().toISOString(),
+    endDate: new Date(new Date().setDate(new Date().getDate() + 45)).toISOString(),
+    taskIds: ['task-1', 'task-2'],
+    color: '#8884d8',
+  }
+];
+
 const ProjectContext = createContext<ProjectContextType | null>(null);
 
-// Provider component
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [epics, setEpics] = useState<Epic[]>(initialEpics);
   const [availableLabels, setAvailableLabels] = useState<Label[]>(initialLabels);
-  const [currentProject, setCurrentProject] = useState<Project | null>(initialProjects[0] || null);
+  const [currentProject, setCurrentProjectState] = useState<Project | null>(initialProjects[0] || null);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
-  // Generate unique ID
   const generateId = () => {
     return Math.random().toString(36).substring(2, 15);
   };
 
-  // Create a new project
+  const setCurrentProject = (projectId: string) => {
+    const project = projects.find(project => project.id === projectId);
+    setCurrentProjectState(project || null);
+  };
+
   const createProject = (project: Omit<Project, 'id' | 'createdAt' | 'lastUpdated' | 'tasks' | 'sprints'>) => {
     const newProject: Project = {
       id: generateId(),
@@ -284,32 +337,22 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     setProjects([...projects, newProject]);
   };
 
-  // Update project details
   const updateProject = (projectId: string, updates: Partial<Project>) => {
     setProjects(projects.map(project =>
       project.id === projectId ? { ...project, ...updates, lastUpdated: new Date().toISOString() } : project
     ));
   };
 
-  // Delete a project
   const deleteProject = (projectId: string) => {
     setProjects(projects.filter(project => project.id !== projectId));
   };
 
-  // Set current project
-  const handleSetCurrentProject = (projectId: string) => {
-    const project = projects.find(project => project.id === projectId);
-    setCurrentProject(project || null);
-  };
-
-  // Create a new task
   const createTask = (
     projectId: string, 
     task: Omit<Task, 'id' | 'createdAt' | 'comments' | 'timeRecords' | 'labels'> & { labelIds?: string[] }
   ) => {
     const { labelIds, ...taskData } = task;
     
-    // Generate new task
     const newTask: Task = {
       id: generateId(),
       title: taskData.title,
@@ -320,18 +363,16 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       sprintId: taskData.sprintId,
       storyPoints: taskData.storyPoints || 0,
       createdAt: new Date().toISOString(),
-      dueDate: taskData.dueDate ? taskData.dueDate.toISOString() : undefined,
+      dueDate: taskData.dueDate,
       comments: [],
       timeRecords: [],
       labels: [],
     };
 
-    // Add task to project
     setProjects(prevProjects =>
       prevProjects.map(project => {
         if (project.id !== projectId) return project;
         
-        // Add task to project
         return {
           ...project,
           tasks: [...project.tasks, newTask]
@@ -339,20 +380,21 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       })
     );
     
-    // Add labels if provided
     if (labelIds && labelIds.length > 0) {
       labelIds.forEach(labelId => {
         addLabelToTask(projectId, newTask.id, labelId);
       });
     }
     
-    // If the task has a sprintId, update sprint tasks
     if (task.sprintId) {
       assignTaskToSprint(projectId, newTask.id, task.sprintId);
     }
   };
 
-  // Update an existing task
+  const addTask = (projectId: string, task: Omit<Task, 'id'>) => {
+    createTask(projectId, task);
+  };
+
   const updateTask = (projectId: string, taskId: string, updates: Partial<Task>) => {
     setProjects(prevProjects =>
       prevProjects.map(project => {
@@ -368,7 +410,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Delete a task
   const deleteTask = (projectId: string, taskId: string) => {
     setProjects(prevProjects =>
       prevProjects.map(project => {
@@ -382,7 +423,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Get task by ID
   const getTaskById = (taskId: string) => {
     let foundTask: Task | undefined;
     projects.forEach(project => {
@@ -394,13 +434,91 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     return foundTask;
   };
 
-  // Get tasks by status
   const getTasksByStatus = (projectId: string, status: TaskStatus) => {
     const project = projects.find(p => p.id === projectId);
     return project ? project.tasks.filter(task => task.status === status) : [];
   };
-  
-  // Update user profile
+
+  const getTasksByEpic = (epicId: string) => {
+    const epic = epics.find(epic => epic.id === epicId);
+    if (!epic) return [];
+    
+    const allTasks: Task[] = [];
+    projects.forEach(project => {
+      project.tasks.forEach(task => {
+        if (epic.taskIds.includes(task.id)) {
+          allTasks.push(task);
+        }
+      });
+    });
+    
+    return allTasks;
+  };
+
+  const getTasksBySprint = (sprintId: string) => {
+    const allTasks: Task[] = [];
+    projects.forEach(project => {
+      project.tasks.forEach(task => {
+        if (task.sprintId === sprintId) {
+          allTasks.push(task);
+        }
+      });
+    });
+    
+    return allTasks;
+  };
+
+  const getSprintCapacity = (sprintId: string) => {
+    const tasks = getTasksBySprint(sprintId);
+    return tasks.reduce((total, task) => total + task.storyPoints, 0);
+  };
+
+  const addEpic = (projectId: string, epic: Omit<Epic, 'id'>) => {
+    const newEpic: Epic = {
+      id: generateId(),
+      ...epic,
+    };
+    setEpics([...epics, newEpic]);
+  };
+
+  const getEpics = (projectId: string) => {
+    return epics.filter(epic => epic.projectId === projectId);
+  };
+
+  const updateEpic = (projectId: string, epicId: string, updates: Partial<Epic>) => {
+    setEpics(prevEpics =>
+      prevEpics.map(epic =>
+        epic.id === epicId ? { ...epic, ...updates } : epic
+      )
+    );
+  };
+
+  const assignTaskToEpic = (projectId: string, taskId: string, epicId: string) => {
+    setProjects(prevProjects =>
+      prevProjects.map(project => {
+        if (project.id !== projectId) return project;
+        
+        return {
+          ...project,
+          tasks: project.tasks.map(task =>
+            task.id === taskId ? { ...task, epicId } : task
+          )
+        };
+      })
+    );
+    
+    setEpics(prevEpics =>
+      prevEpics.map(epic => {
+        if (epic.id !== epicId) return epic;
+        
+        return {
+          ...epic,
+          taskIds: epic.taskIds.includes(taskId) ? epic.taskIds : [...epic.taskIds, taskId]
+        };
+      })
+    );
+  };
+
   const updateUserProfile = (userId: string, updates: Partial<User>) => {
     setUsers(prevUsers =>
       prevUsers.map(user =>
@@ -410,8 +528,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       )
     );
   };
-  
-  // Update task status
+
   const updateTaskStatus = (projectId: string, taskId: string, status: TaskStatus) => {
     updateTask(projectId, taskId, { status });
   };
@@ -424,7 +541,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     updateTask(projectId, taskId, { sprintId });
   };
 
-  // Add a comment to a task
   const addComment = (projectId: string, taskId: string, comment: Omit<Comment, 'id' | 'createdAt'>) => {
     const newComment: Comment = {
       id: generateId(),
@@ -447,7 +563,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Add a time record to a task
   const addTimeRecord = (projectId: string, taskId: string, record: Omit<TimeRecord, 'id'>) => {
     const newTimeRecord: TimeRecord = {
       id: generateId(),
@@ -455,6 +570,8 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       duration: record.duration,
       note: record.note,
       createdAt: new Date().toISOString(),
+      startTime: record.startTime,
+      endTime: record.endTime,
     };
 
     setProjects(prevProjects =>
@@ -471,12 +588,10 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Get user by ID
   const getUserById = (userId: string) => {
     return users.find(user => user.id === userId);
   };
 
-  // Get user workload
   const getUserWorkload = (projectId: string, userId: string) => {
     const project = projects.find(p => p.id === projectId);
     const user = users.find(u => u.id === userId);
@@ -492,7 +607,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
     const assignedTasks = project.tasks.filter(task => task.assigneeId === userId);
     const totalStoryPoints = assignedTasks.reduce((sum, task) => sum + task.storyPoints, 0);
-    const estimatedHours = totalStoryPoints * 8; // Assuming 1 story point = 8 hours
+    const estimatedHours = totalStoryPoints * 8;
 
     return {
       user,
@@ -503,7 +618,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
-  // Get team workload
   const getTeamWorkload = (projectId: string) => {
     const project = projects.find(p => p.id === projectId);
     if (!project) return {};
@@ -516,32 +630,27 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     return teamWorkload;
   };
 
-  // Filter tasks
   const filterTasks = (projectId: string, search: string, filters: TaskFilters) => {
     const project = projects.find(p => p.id === projectId);
     if (!project) return [];
 
     return project.tasks.filter(task => {
-      // Search filter
       if (search && !task.title.toLowerCase().includes(search.toLowerCase())) {
         return false;
       }
 
-      // Status filter
       if (filters.status && filters.status.length > 0) {
         if (!filters.status.includes(task.status)) {
           return false;
         }
       }
 
-      // Priority filter
       if (filters.priority && filters.priority.length > 0) {
         if (!filters.priority.includes(task.priority)) {
           return false;
         }
       }
 
-      // Assignee filter
       if (filters.assigneeId && filters.assigneeId.length > 0) {
         if (filters.assigneeId.includes('unassigned')) {
           if (task.assigneeId) return false;
@@ -550,7 +659,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Sprint filter
       if (filters.sprintId && filters.sprintId.length > 0) {
         if (filters.sprintId.includes('none')) {
           if (task.sprintId) return false;
@@ -559,7 +667,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Filter by labels
       if (filters.labelIds && filters.labelIds.length > 0) {
         const taskLabelIds = task.labels.map(label => label.id);
         if (!filters.labelIds.some(id => taskLabelIds.includes(id))) {
@@ -567,7 +674,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Date range filter
       if (filters.dueDateFrom || filters.dueDateTo) {
         if (!task.dueDate) return false;
 
@@ -588,7 +694,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  // Create a new label
   const createLabel = (label: Omit<Label, 'id'>) => {
     const newLabel: Label = {
       id: generateId(),
@@ -598,7 +703,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     setAvailableLabels([...availableLabels, newLabel]);
   };
 
-  // Add a label to a task
   const addLabelToTask = (projectId: string, taskId: string, labelId: string) => {
     setProjects(prevProjects =>
       prevProjects.map(project => {
@@ -622,7 +726,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Remove a label from a task
   const removeLabelFromTask = (projectId: string, taskId: string, labelId: string) => {
     setProjects(prevProjects =>
       prevProjects.map(project => {
@@ -638,12 +741,10 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Update task due date
   const updateTaskDueDate = (projectId: string, taskId: string, dueDate?: string) => {
     updateTask(projectId, taskId, { dueDate });
   };
 
-  // Create a new sprint
   const createSprint = (projectId: string, sprint: Omit<Sprint, 'id'>) => {
     const newSprint: Sprint = {
       id: generateId(),
@@ -668,7 +769,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Update sprint details
   const updateSprint = (projectId: string, sprintId: string, updates: Partial<Sprint>) => {
     setProjects(prevProjects =>
       prevProjects.map(project => {
@@ -684,7 +784,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Delete a sprint
   const deleteSprint = (projectId: string, sprintId: string) => {
     setProjects(prevProjects =>
       prevProjects.map(project => {
@@ -698,13 +797,11 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Get sprints by project ID
   const getSprints = (projectId: string) => {
     const project = projects.find(p => p.id === projectId);
     return project ? project.sprints : [];
   };
 
-  // Assign a task to a sprint
   const assignTaskToSprint = (projectId: string, taskId: string, sprintId: string) => {
     setProjects(prevProjects =>
       prevProjects.map(project => {
@@ -723,7 +820,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Remove a task from a sprint
   const removeTaskFromSprint = (projectId: string, taskId: string) => {
     setProjects(prevProjects =>
       prevProjects.map(project => {
@@ -743,7 +839,6 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // Export context values
   return (
     <ProjectContext.Provider value={{
       users,
@@ -782,13 +877,20 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       getSprints,
       assignTaskToSprint,
       removeTaskFromSprint,
+      addEpic,
+      getEpics,
+      getTasksByEpic,
+      updateEpic,
+      assignTaskToEpic,
+      getTasksBySprint,
+      getSprintCapacity,
+      addTask,
     }}>
       {children}
     </ProjectContext.Provider>
   );
 };
 
-// Custom hook
 export const useProject = () => {
   const context = useContext(ProjectContext);
   if (!context) {
