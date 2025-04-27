@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   useProject, 
@@ -144,16 +145,22 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
               <div>
                 <label className="text-sm font-medium mb-1 block text-gray-500">Assignee</label>
                 <Select 
-                  value={filters.assigneeId?.[0] || ''}
+                  value={filters.assigneeId?.[0] || "none"}
                   onValueChange={(value) => {
-                    handleFilterChange({ assigneeId: value ? [value] : [] });
+                    if (value === "none") {
+                      handleFilterChange({ assigneeId: [] });
+                    } else if (value === "unassigned") {
+                      handleFilterChange({ assigneeId: ["unassigned"] });
+                    } else {
+                      handleFilterChange({ assigneeId: [value] });
+                    }
                   }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by assignee" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="any">Any assignee</SelectItem>
+                    <SelectItem value="none">Any assignee</SelectItem>
                     <SelectItem value="unassigned">Unassigned</SelectItem>
                     {users.map(user => (
                       <SelectItem key={user.id} value={user.id}>

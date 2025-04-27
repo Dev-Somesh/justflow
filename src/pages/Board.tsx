@@ -26,6 +26,7 @@ const Board = () => {
     status?: string;
     assignee?: string;
     taskId?: string;
+    sprintId?: string;
   }>({});
   
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ const Board = () => {
       if (params.has('priority')) filters.priority = params.get('priority');
       if (params.has('status')) filters.status = params.get('status');
       if (params.has('assignee')) filters.assignee = params.get('assignee');
+      if (params.has('sprint')) filters.sprintId = params.get('sprint');
       if (params.has('task')) {
         filters.taskId = params.get('task');
         const task = tasks.find(t => t.id === params.get('task'));
@@ -120,6 +122,23 @@ const Board = () => {
     }
   };
   
+  const handleSprintChange = (sprintId: string | null) => {
+    // Update URL with sprint filter
+    const url = new URL(window.location.href);
+    if (sprintId) {
+      url.searchParams.set('sprint', sprintId);
+    } else {
+      url.searchParams.delete('sprint');
+    }
+    window.history.pushState({}, '', url);
+    
+    // Update filters
+    setActiveFilters(prev => ({
+      ...prev,
+      sprintId: sprintId || undefined
+    }));
+  };
+  
   const clearFilters = () => {
     navigate('/board');
     setActiveFilters({});
@@ -164,7 +183,11 @@ const Board = () => {
           />
         </div>
         <div className="space-y-6">
-          <SprintSelector projectId={currentProject.id} />
+          <SprintSelector 
+            projectId={currentProject.id}
+            onSprintChange={handleSprintChange}
+            selectedSprintId={activeFilters.sprintId}
+          />
           <StoryPointsInfo />
         </div>
       </div>

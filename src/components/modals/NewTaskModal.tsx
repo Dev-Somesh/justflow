@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -5,6 +6,7 @@ import {
   DialogHeader, 
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { 
   Select,
@@ -91,8 +93,11 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
       return;
     }
     
+    // Generate a unique ID for the new task
+    const newTaskId = `task-${Date.now()}`;
+
     const newTask = {
-      id: `task-${Date.now()}`,
+      id: newTaskId,
       title,
       description,
       priority,
@@ -100,17 +105,19 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
       assigneeId,
       dueDate: dueDate?.toISOString(),
       storyPoints,
-      epicId: selectedEpicId,
-      sprintId: selectedSprintId,
+      epicId: selectedEpicId === "none" ? undefined : selectedEpicId,
+      sprintId: selectedSprintId === "none" ? undefined : selectedSprintId,
     };
     
     try {
       addTask(projectId, newTask);
       
-      const newTaskId = `task-${Date.now()}`;
-      selectedLabels.forEach(labelId => {
-        addLabelToTask(projectId, newTaskId, labelId);
-      });
+      // Add selected labels to the task
+      if (selectedLabels.length > 0) {
+        selectedLabels.forEach(labelId => {
+          addLabelToTask(projectId, newTaskId, labelId);
+        });
+      }
       
       toast({
         title: "Success",
@@ -148,6 +155,9 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
+          <DialogDescription>
+            Add a new task to your project. Fill in the details below.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
@@ -355,6 +365,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                       key={label.id} 
                       style={{ backgroundColor: label.color }} 
                       className="text-white"
+                      onClick={() => handleLabelToggle(label.id)}
                     >
                       {label.name}
                     </Badge>

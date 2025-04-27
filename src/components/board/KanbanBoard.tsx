@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProject, TaskStatus, TaskFilters, TaskPriority } from '@/contexts/ProjectContext';
 import TaskCard from './TaskCard';
 import TaskFiltersComponent from './TaskFilters';
@@ -19,6 +19,7 @@ interface KanbanBoardProps {
     status?: string;
     assignee?: string;
     taskId?: string;
+    sprintId?: string;
   };
 }
 
@@ -48,7 +49,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [hasError, setHasError] = useState(false);
 
   // Apply external filters when they change
-  React.useEffect(() => {
+  useEffect(() => {
     if (filters && Object.keys(filters).length > 0) {
       const newFilters: TaskFilters = {};
       
@@ -59,6 +60,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       
       if (filters.status) newFilters.status = [filters.status as TaskStatus];
       if (filters.assignee) newFilters.assigneeId = [filters.assignee];
+      if (filters.sprintId) newFilters.sprintId = [filters.sprintId];
       
       setActiveFilters(newFilters);
     } else {

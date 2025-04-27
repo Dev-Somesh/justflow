@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -5,6 +6,7 @@ import {
   DialogHeader, 
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { 
   Select,
@@ -57,10 +59,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
     getUserById, 
     addComment, 
     updateTaskStatus,
+    updateTaskAssignee,
+    updateTaskSprint,
     addLabelToTask,
     removeLabelFromTask,
     addTimeRecord,
-    updateTaskDueDate
+    updateTaskDueDate,
+    getSprints
   } = useProject();
   
   const [newComment, setNewComment] = useState('');
@@ -68,6 +73,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
   
   const project = projects.find(p => p.id === projectId);
   const task = project?.tasks.find(t => t.id === taskId);
+  
+  // Get available sprints
+  const sprints = getSprints(projectId);
   
   if (!task || !project) {
     return null;
@@ -77,6 +85,16 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
   
   const handleStatusChange = (status: string) => {
     updateTaskStatus(projectId, task.id, status as TaskStatus);
+  };
+  
+  const handleAssigneeChange = (userId: string) => {
+    const newAssigneeId = userId === "unassigned" ? undefined : userId;
+    updateTaskAssignee(projectId, task.id, newAssigneeId);
+  };
+  
+  const handleSprintChange = (sprintId: string) => {
+    const newSprintId = sprintId === "none" ? undefined : sprintId;
+    updateTaskSprint(projectId, task.id, newSprintId);
   };
   
   const handleAddComment = () => {
@@ -122,6 +140,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
               <span>{task.title}</span>
             </div>
           </DialogTitle>
+          <DialogDescription>
+            Task ID: {task.id}
+          </DialogDescription>
         </DialogHeader>
         
         <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
@@ -163,16 +184,25 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
                 
                 <div className="w-full md:w-1/3">
                   <label className="text-sm font-medium mb-1 block text-gray-500">Assignee</label>
-                  <div className="rounded-md border border-input px-3 py-1 flex items-center gap-2">
-                    {assignee ? (
-                      <>
-                        <UserAvatar src={assignee.avatar} name={assignee.name} size="sm" />
-                        <span className="text-sm truncate">{assignee.name}</span>
-                      </>
-                    ) : (
-                      <span className="text-sm text-gray-500">Unassigned</span>
-                    )}
-                  </div>
+                  <Select
+                    value={task.assigneeId || "unassigned"}
+                    onValueChange={handleAssigneeChange}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Select assignee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {users.map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          <div className="flex items-center gap-2">
+                            <UserAvatar src={user.avatar} name={user.name} size="xs" />
+                            <span>{user.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               
@@ -224,6 +254,31 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
                       />
                     </PopoverContent>
                   </Popover>
+                </div>
+              </div>
+              
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="w-full">
+                  <label className="text-sm font-medium mb-1 block text-gray-500">Sprint</label>
+                  <Select
+                    value={task.sprintId || "none"}
+                    onValueChange={handleSprintChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sprint" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {sprints.map(sprint => (
+                        <SelectItem key={sprint.id} value={sprint.id}>
+                          <div className="flex items-center gap-2">
+                            <Clock size={14} className="text-gray-500" />
+                            {sprint.name} ({sprint.status})
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               
@@ -297,10 +352,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
               </div>
               
               <div className="space-y-4 mb-4">
-                {task.comments.length === 0 ? (
+                {task.comments && task.comments.length === 0 ? (
                   <p className="text-sm text-gray-500">No comments yet.</p>
                 ) : (
-                  task.comments.map((comment: Comment) => {
+                  task.comments && task.comments.map((comment: Comment) => {
                     const commentUser = getUserById(comment.userId);
                     return (
                       <div key={comment.id} className="flex gap-3">
@@ -350,7 +405,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
               taskId={task.id}
               projectId={projectId}
               userId={users[0].id} // Current user
-              timeRecords={task.timeRecords}
+              timeRecords={task.timeRecords || []}
               onAddTimeRecord={handleAddTimeRecord}
             />
           </TabsContent>
