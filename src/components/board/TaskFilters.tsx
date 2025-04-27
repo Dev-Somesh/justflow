@@ -1,362 +1,537 @@
 
-import React, { useState } from 'react';
-import { 
-  useProject, 
-  TaskFilters as TaskFiltersType, 
-  TaskPriority, 
-  TaskStatus 
-} from '@/contexts/ProjectContext';
+import React, { useState, useEffect } from 'react';
+import { useProject, TaskFilters } from '@/contexts/ProjectContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   Popover, 
   PopoverContent, 
   PopoverTrigger 
 } from '@/components/ui/popover';
-import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
-import { Search, Filter, X, Calendar as CalendarIcon } from 'lucide-react';
+import UserAvatar from '@/components/ui/UserAvatar';
+import { 
+  Filter, 
+  CalendarIcon,
+  X,
+  CheckSquare,
+  ArrowDownAZ,
+  CalendarRange,
+  Tag,
+  User
+} from 'lucide-react';
 import { format } from 'date-fns';
 
 interface TaskFiltersProps {
   projectId: string;
-  onFilterChange: (query: string, filters: TaskFiltersType) => void;
+  onFilterChange: (search: string, filters: TaskFilters) => void;
 }
 
-const statusOptions = [
-  { value: 'todo', label: 'To Do' },
-  { value: 'in-progress', label: 'In Progress' },
-  { value: 'done', label: 'Done' },
-];
-
-const priorityOptions = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-];
-
 const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) => {
-  const { users, availableLabels } = useProject();
-  const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState<TaskFiltersType>({});
-  const [showFilters, setShowFilters] = useState(false);
-
-  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newQuery = e.target.value;
-    setQuery(newQuery);
-    onFilterChange(newQuery, filters);
-  };
-
-  const handleFilterChange = (newFilters: TaskFiltersType) => {
-    const updatedFilters = { ...filters, ...newFilters };
-    setFilters(updatedFilters);
-    onFilterChange(query, updatedFilters);
-  };
-
-  const clearFilters = () => {
-    setQuery('');
+  const { users, availableLabels, getSprints } = useProject();
+  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<TaskFilters>({});
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+  
+  // Get all sprints for the project
+  const sprints = getSprints(projectId);
+  
+  // Update filter count
+  useEffect(() => {
+    let count = 0;
+    if (filters.status && filters.status.length) count++;
+    if (filters.priority && filters.priority.length) count++;
+    if (filters.assigneeId && filters.assigneeId.length) count++;
+    if (filters.labelIds && filters.labelIds.length) count++;
+    if (filters.dueDateFrom || filters.dueDateTo) count++;
+    if (filters.sprintId && filters.sprintId.length) count++;
+    setActiveFiltersCount(count);
+  }, [filters]);
+  
+  // Notify parent of filter changes
+  useEffect(() => {
+    onFilterChange(search, filters);
+  }, [search, filters, onFilterChange]);
+  
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearch('');
     setFilters({});
-    onFilterChange('', {});
+    setDateRange({});
   };
-
-  const activeFilterCount = Object.values(filters).filter(
-    value => Array.isArray(value) ? value.length > 0 : value !== undefined
-  ).length;
-
+  
+  // Toggle status filter
+  const toggleStatusFilter = (status: string) => {
+    setFilters(prev => {
+      const currentStatuses = prev.status || [];
+      const newStatuses = currentStatuses.includes(status as any)
+        ? currentStatuses.filter(s => s !== status)
+        : [...currentStatuses, status] as any;
+      
+      return {
+        ...prev,
+        status: newStatuses.length > 0 ? newStatuses : undefined
+      };
+    });
+  };
+  
+  // Toggle priority filter
+  const togglePriorityFilter = (priority: string) => {
+    setFilters(prev => {
+      const currentPriorities = prev.priority || [];
+      const newPriorities = currentPriorities.includes(priority as any)
+        ? currentPriorities.filter(p => p !== priority)
+        : [...currentPriorities, priority] as any;
+      
+      return {
+        ...prev,
+        priority: newPriorities.length > 0 ? newPriorities : undefined
+      };
+    });
+  };
+  
+  // Toggle assignee filter
+  const toggleAssigneeFilter = (userId: string) => {
+    setFilters(prev => {
+      const currentAssignees = prev.assigneeId || [];
+      const newAssignees = currentAssignees.includes(userId)
+        ? currentAssignees.filter(id => id !== userId)
+        : [...currentAssignees, userId];
+      
+      return {
+        ...prev,
+        assigneeId: newAssignees.length > 0 ? newAssignees : undefined
+      };
+    });
+  };
+  
+  // Toggle label filter
+  const toggleLabelFilter = (labelId: string) => {
+    setFilters(prev => {
+      const currentLabels = prev.labelIds || [];
+      const newLabels = currentLabels.includes(labelId)
+        ? currentLabels.filter(id => id !== labelId)
+        : [...currentLabels, labelId];
+      
+      return {
+        ...prev,
+        labelIds: newLabels.length > 0 ? newLabels : undefined
+      };
+    });
+  };
+  
+  // Toggle sprint filter
+  const toggleSprintFilter = (sprintId: string) => {
+    setFilters(prev => {
+      const currentSprints = prev.sprintId || [];
+      const newSprints = currentSprints.includes(sprintId)
+        ? currentSprints.filter(id => id !== sprintId)
+        : [...currentSprints, sprintId];
+      
+      return {
+        ...prev,
+        sprintId: newSprints.length > 0 ? newSprints : undefined
+      };
+    });
+  };
+  
+  // Update date range filter
+  const handleDateRangeSelect = (range: typeof dateRange) => {
+    setDateRange(range);
+    setFilters(prev => ({
+      ...prev,
+      dueDateFrom: range.from ? format(range.from, 'yyyy-MM-dd') : undefined,
+      dueDateTo: range.to ? format(range.to, 'yyyy-MM-dd') : undefined
+    }));
+  };
+  
+  // Check if a filter is active
+  const isFilterActive = (type: string, value: string) => {
+    switch (type) {
+      case 'status':
+        return filters.status?.includes(value as any) || false;
+      case 'priority':
+        return filters.priority?.includes(value as any) || false;
+      case 'assignee':
+        return filters.assigneeId?.includes(value) || false;
+      case 'label':
+        return filters.labelIds?.includes(value) || false;
+      case 'sprint':
+        return filters.sprintId?.includes(value) || false;
+      default:
+        return false;
+    }
+  };
+  
   return (
     <div className="mb-6">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      <div className="flex flex-col md:flex-row gap-2 mb-2">
+        <div className="relative grow">
           <Input
             placeholder="Search tasks..."
-            value={query}
-            onChange={handleQueryChange}
-            className="pl-9"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
           />
-        </div>
-        <Popover open={showFilters} onOpenChange={setShowFilters}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="relative">
-              <Filter className="mr-2 h-4 w-4" />
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full text-white text-xs flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
-              )}
+          <ArrowDownAZ className="h-4 w-4 absolute top-3 left-3 text-gray-400" />
+          {search && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSearch('')}
+              className="absolute top-2 right-2 h-6 w-6"
+            >
+              <X className="h-4 w-4" />
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <div className="space-y-4">
-              <h3 className="font-medium">Filter tasks</h3>
+          )}
+        </div>
+        
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                <span>Filter</span>
+                {activeFiltersCount > 0 && (
+                  <Badge className="ml-1 bg-primary text-primary-foreground h-5 w-5 p-0 text-xs flex items-center justify-center">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              <DropdownMenuLabel>Filter Tasks</DropdownMenuLabel>
+              <DropdownMenuSeparator />
               
-              <div>
-                <label className="text-sm font-medium mb-1 block text-gray-500">Status</label>
-                <div className="flex flex-wrap gap-1">
-                  {statusOptions.map(option => (
-                    <Badge 
-                      key={option.value}
-                      variant={filters.status?.includes(option.value as TaskStatus) ? 'default' : 'outline'}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        const currentStatuses = filters.status || [];
-                        const newStatuses = currentStatuses.includes(option.value as TaskStatus)
-                          ? currentStatuses.filter(s => s !== option.value)
-                          : [...currentStatuses, option.value as TaskStatus];
-                        handleFilterChange({ status: newStatuses });
-                      }}
-                    >
-                      {option.label}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-1 block text-gray-500">Priority</label>
-                <div className="flex flex-wrap gap-1">
-                  {priorityOptions.map(option => (
-                    <Badge 
-                      key={option.value}
-                      variant={filters.priority?.includes(option.value as TaskPriority) ? 'default' : 'outline'}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        const currentPriorities = filters.priority || [];
-                        const newPriorities = currentPriorities.includes(option.value as TaskPriority)
-                          ? currentPriorities.filter(p => p !== option.value)
-                          : [...currentPriorities, option.value as TaskPriority];
-                        handleFilterChange({ priority: newPriorities });
-                      }}
-                    >
-                      {option.label}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-1 block text-gray-500">Assignee</label>
-                <Select 
-                  value={filters.assigneeId?.[0] || "none"}
-                  onValueChange={(value) => {
-                    if (value === "none") {
-                      handleFilterChange({ assigneeId: [] });
-                    } else if (value === "unassigned") {
-                      handleFilterChange({ assigneeId: ["unassigned"] });
-                    } else {
-                      handleFilterChange({ assigneeId: [value] });
-                    }
-                  }}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="text-xs">Status</DropdownMenuLabel>
+                <DropdownMenuItem 
+                  onClick={() => toggleStatusFilter('todo')}
+                  className="flex items-center justify-between cursor-pointer"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter by assignee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Any assignee</SelectItem>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
-                    {users.map(user => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <span>To Do</span>
+                  {isFilterActive('status', 'todo') && <CheckSquare className="h-4 w-4" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => toggleStatusFilter('in-progress')}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>In Progress</span>
+                  {isFilterActive('status', 'in-progress') && <CheckSquare className="h-4 w-4" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => toggleStatusFilter('done')}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>Done</span>
+                  {isFilterActive('status', 'done') && <CheckSquare className="h-4 w-4" />}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
               
-              <div>
-                <label className="text-sm font-medium mb-1 block text-gray-500">Labels</label>
-                <div className="flex flex-wrap gap-1">
-                  {availableLabels.map(label => (
-                    <Badge 
-                      key={label.id}
-                      variant={filters.labelIds?.includes(label.id) ? 'default' : 'outline'}
-                      style={{ backgroundColor: filters.labelIds?.includes(label.id) ? label.color : 'transparent', 
-                              color: filters.labelIds?.includes(label.id) ? 'white' : 'currentColor',
-                              borderColor: label.color }}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        const currentLabels = filters.labelIds || [];
-                        const newLabels = currentLabels.includes(label.id)
-                          ? currentLabels.filter(id => id !== label.id)
-                          : [...currentLabels, label.id];
-                        handleFilterChange({ labelIds: newLabels });
-                      }}
-                    >
-                      {label.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+              <DropdownMenuSeparator />
               
-              <div>
-                <label className="text-sm font-medium mb-1 block text-gray-500">Due Date</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <p className="text-xs mb-1">From</p>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className="w-full justify-start text-left text-xs h-8"
-                        >
-                          <CalendarIcon className="mr-2 h-3 w-3" />
-                          {filters.dueDateFrom ? (
-                            format(new Date(filters.dueDateFrom), "PP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={filters.dueDateFrom ? new Date(filters.dueDateFrom) : undefined}
-                          onSelect={(date) => handleFilterChange({ dueDateFrom: date?.toISOString() })}
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="text-xs">Priority</DropdownMenuLabel>
+                <DropdownMenuItem 
+                  onClick={() => togglePriorityFilter('high')}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-priority-high rounded-full"></div>
+                    <span>High</span>
                   </div>
-                  
-                  <div>
-                    <p className="text-xs mb-1">To</p>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className="w-full justify-start text-left text-xs h-8"
-                        >
-                          <CalendarIcon className="mr-2 h-3 w-3" />
-                          {filters.dueDateTo ? (
-                            format(new Date(filters.dueDateTo), "PP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={filters.dueDateTo ? new Date(filters.dueDateTo) : undefined}
-                          onSelect={(date) => handleFilterChange({ dueDateTo: date?.toISOString() })}
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
+                  {isFilterActive('priority', 'high') && <CheckSquare className="h-4 w-4" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => togglePriorityFilter('medium')}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-priority-medium rounded-full"></div>
+                    <span>Medium</span>
                   </div>
-                </div>
-              </div>
+                  {isFilterActive('priority', 'medium') && <CheckSquare className="h-4 w-4" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => togglePriorityFilter('low')}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-priority-low rounded-full"></div>
+                    <span>Low</span>
+                  </div>
+                  {isFilterActive('priority', 'low') && <CheckSquare className="h-4 w-4" />}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
               
-              <div className="flex justify-end">
-                <Button variant="ghost" onClick={clearFilters} className="mr-2">
-                  <X className="mr-1 h-4 w-4" />
-                  Clear
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="flex items-center gap-1 text-xs">
+                  <User className="h-3 w-3" />
+                  <span>Assignees</span>
+                </DropdownMenuLabel>
+                <DropdownMenuItem 
+                  onClick={() => toggleAssigneeFilter('unassigned')}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>Unassigned</span>
+                  {isFilterActive('assignee', 'unassigned') && <CheckSquare className="h-4 w-4" />}
+                </DropdownMenuItem>
+                {users.map(user => (
+                  <DropdownMenuItem 
+                    key={user.id}
+                    onClick={() => toggleAssigneeFilter(user.id)}
+                    className="flex items-center justify-between cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <UserAvatar src={user.avatar} name={user.name} size="sm" />
+                      <span>{user.name}</span>
+                    </div>
+                    {isFilterActive('assignee', user.id) && <CheckSquare className="h-4 w-4" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+              
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="flex items-center gap-1 text-xs">
+                  <Tag className="h-3 w-3" />
+                  <span>Sprints</span>
+                </DropdownMenuLabel>
+                <DropdownMenuItem 
+                  onClick={() => toggleSprintFilter('none')}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>No Sprint</span>
+                  {isFilterActive('sprint', 'none') && <CheckSquare className="h-4 w-4" />}
+                </DropdownMenuItem>
+                {sprints.map(sprint => (
+                  <DropdownMenuItem 
+                    key={sprint.id}
+                    onClick={() => toggleSprintFilter(sprint.id)}
+                    className="flex items-center justify-between cursor-pointer"
+                  >
+                    <span>{sprint.name}</span>
+                    {isFilterActive('sprint', sprint.id) && <CheckSquare className="h-4 w-4" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+              
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="text-xs">Labels</DropdownMenuLabel>
+                {availableLabels.map(label => (
+                  <DropdownMenuItem 
+                    key={label.id}
+                    onClick={() => toggleLabelFilter(label.id)}
+                    className="flex items-center justify-between cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-2 h-2 rounded-full" 
+                        style={{ backgroundColor: label.color }}
+                      ></div>
+                      <span>{label.name}</span>
+                    </div>
+                    {isFilterActive('label', label.id) && <CheckSquare className="h-4 w-4" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+              
+              <DropdownMenuSeparator />
+              
+              {activeFiltersCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  className="w-full mt-2 text-xs"
+                >
+                  Clear all filters
                 </Button>
-                <Button onClick={() => setShowFilters(false)}>Apply</Button>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <CalendarRange className="h-4 w-4" />
+                <span>Due Date</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <div className="p-3 border-b">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-medium">Date Range</h3>
+                  {(dateRange.from || dateRange.to) && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleDateRangeSelect({})}
+                      className="h-8 px-2 py-1"
+                    >
+                      Reset
+                    </Button>
+                  )}
+                </div>
+                {dateRange.from && dateRange.to ? (
+                  <div className="text-xs text-gray-500 pt-1">
+                    {format(dateRange.from, 'LLL dd, y')} - {format(dateRange.to, 'LLL dd, y')}
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-500 pt-1">
+                    Select a date range
+                  </div>
+                )}
               </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={handleDateRangeSelect}
+                numberOfMonths={1}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
       
-      {activeFilterCount > 0 && (
-        <div className="flex flex-wrap gap-1 mb-4">
-          {query && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Search: {query}
-              <X 
-                className="h-3 w-3 ml-1 cursor-pointer" 
-                onClick={() => {
-                  setQuery('');
-                  onFilterChange('', filters);
-                }}
-              />
-            </Badge>
-          )}
-          
+      {activeFiltersCount > 0 && (
+        <div className="flex flex-wrap gap-2 mt-3">
           {filters.status?.map(status => (
-            <Badge key={status} variant="secondary" className="flex items-center gap-1">
-              Status: {statusOptions.find(o => o.value === status)?.label}
-              <X 
-                className="h-3 w-3 ml-1 cursor-pointer" 
-                onClick={() => {
-                  const newStatuses = filters.status?.filter(s => s !== status) || [];
-                  handleFilterChange({ status: newStatuses });
-                }}
-              />
+            <Badge 
+              key={status} 
+              variant="outline" 
+              className="flex items-center gap-1 cursor-pointer hover:bg-gray-100"
+              onClick={() => toggleStatusFilter(status)}
+            >
+              Status: {status}
+              <X className="h-3 w-3 ml-1" />
             </Badge>
           ))}
           
           {filters.priority?.map(priority => (
-            <Badge key={priority} variant="secondary" className="flex items-center gap-1">
-              Priority: {priorityOptions.find(o => o.value === priority)?.label}
-              <X 
-                className="h-3 w-3 ml-1 cursor-pointer" 
-                onClick={() => {
-                  const newPriorities = filters.priority?.filter(p => p !== priority) || [];
-                  handleFilterChange({ priority: newPriorities });
-                }}
-              />
+            <Badge 
+              key={priority} 
+              variant="outline" 
+              className="flex items-center gap-1 cursor-pointer hover:bg-gray-100"
+              onClick={() => togglePriorityFilter(priority)}
+            >
+              Priority: {priority}
+              <X className="h-3 w-3 ml-1" />
             </Badge>
           ))}
           
-          {filters.assigneeId?.map(id => {
-            const label = id === 'unassigned' 
-              ? 'Unassigned' 
-              : `Assignee: ${users.find(u => u.id === id)?.name || 'Unknown'}`;
+          {filters.assigneeId?.map(assigneeId => {
+            if (assigneeId === 'unassigned') {
+              return (
+                <Badge 
+                  key={assigneeId} 
+                  variant="outline" 
+                  className="flex items-center gap-1 cursor-pointer hover:bg-gray-100"
+                  onClick={() => toggleAssigneeFilter(assigneeId)}
+                >
+                  Unassigned
+                  <X className="h-3 w-3 ml-1" />
+                </Badge>
+              );
+            }
             
+            const user = users.find(u => u.id === assigneeId);
             return (
-              <Badge key={id} variant="secondary" className="flex items-center gap-1">
-                {label}
-                <X 
-                  className="h-3 w-3 ml-1 cursor-pointer" 
-                  onClick={() => handleFilterChange({ assigneeId: [] })}
-                />
+              <Badge 
+                key={assigneeId} 
+                variant="outline" 
+                className="flex items-center gap-1 cursor-pointer hover:bg-gray-100"
+                onClick={() => toggleAssigneeFilter(assigneeId)}
+              >
+                <User className="h-3 w-3 mr-1" />
+                {user ? user.name : assigneeId}
+                <X className="h-3 w-3 ml-1" />
               </Badge>
             );
           })}
           
-          {filters.labelIds?.map(id => {
-            const label = availableLabels.find(l => l.id === id);
+          {filters.sprintId?.map(sprintId => {
+            if (sprintId === 'none') {
+              return (
+                <Badge 
+                  key={sprintId} 
+                  variant="outline" 
+                  className="flex items-center gap-1 cursor-pointer hover:bg-gray-100"
+                  onClick={() => toggleSprintFilter(sprintId)}
+                >
+                  No Sprint
+                  <X className="h-3 w-3 ml-1" />
+                </Badge>
+              );
+            }
             
+            const sprint = sprints.find(s => s.id === sprintId);
             return (
               <Badge 
-                key={id} 
-                variant="secondary" 
-                className="flex items-center gap-1"
-                style={{ borderLeft: `3px solid ${label?.color || 'gray'}` }}
+                key={sprintId} 
+                variant="outline" 
+                className="flex items-center gap-1 cursor-pointer hover:bg-gray-100"
+                onClick={() => toggleSprintFilter(sprintId)}
               >
-                Label: {label?.name || 'Unknown'}
-                <X 
-                  className="h-3 w-3 ml-1 cursor-pointer" 
-                  onClick={() => {
-                    const newLabels = filters.labelIds?.filter(l => l !== id) || [];
-                    handleFilterChange({ labelIds: newLabels });
-                  }}
-                />
+                Sprint: {sprint ? sprint.name : sprintId}
+                <X className="h-3 w-3 ml-1" />
+              </Badge>
+            );
+          })}
+          
+          {filters.labelIds?.map(labelId => {
+            const label = availableLabels.find(l => l.id === labelId);
+            return (
+              <Badge 
+                key={labelId} 
+                variant="outline" 
+                className="flex items-center gap-1 cursor-pointer hover:bg-gray-100"
+                onClick={() => toggleLabelFilter(labelId)}
+              >
+                <div 
+                  className="w-2 h-2 rounded-full mr-1" 
+                  style={{ backgroundColor: label?.color || '#ccc' }}
+                ></div>
+                {label ? label.name : labelId}
+                <X className="h-3 w-3 ml-1" />
               </Badge>
             );
           })}
           
           {(filters.dueDateFrom || filters.dueDateTo) && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Due date: {filters.dueDateFrom ? format(new Date(filters.dueDateFrom), "MMM d") : 'Any'} 
-              {' '} to {' '}
-              {filters.dueDateTo ? format(new Date(filters.dueDateTo), "MMM d") : 'Any'}
-              <X 
-                className="h-3 w-3 ml-1 cursor-pointer" 
-                onClick={() => handleFilterChange({ dueDateFrom: undefined, dueDateTo: undefined })}
-              />
+            <Badge 
+              variant="outline" 
+              className="flex items-center gap-1 cursor-pointer hover:bg-gray-100"
+              onClick={() => handleDateRangeSelect({})}
+            >
+              <CalendarIcon className="h-3 w-3 mr-1" />
+              Due: {filters.dueDateFrom && format(new Date(filters.dueDateFrom), 'MMM d')}
+              {filters.dueDateFrom && filters.dueDateTo && ' - '}
+              {filters.dueDateTo && format(new Date(filters.dueDateTo), 'MMM d')}
+              <X className="h-3 w-3 ml-1" />
             </Badge>
           )}
+          
+          <Button variant="ghost" size="sm" onClick={handleClearFilters} className="text-xs h-6">
+            Clear all
+          </Button>
         </div>
       )}
     </div>

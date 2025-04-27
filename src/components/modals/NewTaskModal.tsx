@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -16,19 +16,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/ui/use-toast";
-import { TaskPriority, TaskStatus, useProject } from '@/contexts/ProjectContext';
-import { CalendarIcon, Tag, Target, Timer } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useProject, TaskStatus, TaskPriority } from "@/contexts/ProjectContext";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { format } from "date-fns";
+import { CalendarIcon, Check, Clock, Plus, Tag, X } from "lucide-react";
+import UserAvatar from "@/components/ui/UserAvatar";
+import { Badge } from "@/components/ui/badge";
 
 interface NewTaskModalProps {
   projectId: string;
@@ -37,349 +45,377 @@ interface NewTaskModalProps {
   onClose: () => void;
 }
 
-const priorityOptions = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-];
+const taskSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  status: z.enum(["todo", "in-progress", "done"]),
+  priority: z.enum(["low", "medium", "high"]),
+  storyPoints: z.number().int().min(0),
+  assigneeId: z.string().optional(),
+  sprintId: z.string().optional(),
+  dueDate: z.date().optional(),
+});
 
-const NewTaskModal: React.FC<NewTaskModalProps> = ({ 
-  projectId, 
-  initialStatus, 
-  isOpen, 
-  onClose 
+type TaskFormValues = z.infer<typeof taskSchema>;
+
+const NewTaskModal: React.FC<NewTaskModalProps> = ({
+  projectId,
+  initialStatus,
+  isOpen,
+  onClose,
 }) => {
-  const { users, availableLabels, addTask, getEpics, getSprints, addLabelToTask } = useProject();
-  const { toast } = useToast();
-  
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<TaskPriority>('medium');
-  const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined);
+  const { users, createTask, availableLabels, getSprints } = useProject();
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
-  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
-  const [storyPoints, setStoryPoints] = useState<number | undefined>(undefined);
-  const [selectedEpicId, setSelectedEpicId] = useState<string | undefined>(undefined);
-  const [selectedSprintId, setSelectedSprintId] = useState<string | undefined>(undefined);
-  
-  const epics = getEpics(projectId);
-  const sprints = getSprints(projectId);
-  
-  useEffect(() => {
-    if (!isOpen) {
-      resetForm();
-    }
-  }, [isOpen]);
-  
-  const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setPriority('medium');
-    setAssigneeId(undefined);
-    setSelectedLabels([]);
-    setDueDate(undefined);
-    setStoryPoints(undefined);
-    setSelectedEpicId(undefined);
-    setSelectedSprintId(undefined);
-  };
-  
-  const handleSubmit = () => {
-    if (!title.trim()) {
-      toast({
-        title: "Error",
-        description: "Task title is required",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Generate a unique ID for the new task
-    const newTaskId = `task-${Date.now()}`;
 
-    const newTask = {
-      id: newTaskId,
-      title,
-      description,
-      priority,
+  const form = useForm<TaskFormValues>({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
+      title: "",
+      description: "",
       status: initialStatus,
-      assigneeId,
-      dueDate: dueDate?.toISOString(),
-      storyPoints,
-      epicId: selectedEpicId === "none" ? undefined : selectedEpicId,
-      sprintId: selectedSprintId === "none" ? undefined : selectedSprintId,
-    };
-    
+      priority: "medium",
+      storyPoints: 1,
+      assigneeId: undefined,
+      sprintId: undefined,
+    },
+  });
+
+  // Get all sprints for the current project
+  const sprints = getSprints(projectId);
+
+  const handleSubmit = (values: TaskFormValues) => {
     try {
-      addTask(projectId, newTask);
-      
-      // Add selected labels to the task
-      if (selectedLabels.length > 0) {
-        selectedLabels.forEach(labelId => {
-          addLabelToTask(projectId, newTaskId, labelId);
-        });
-      }
-      
-      toast({
-        title: "Success",
-        description: "Task created successfully",
+      // Create a new task with form values and selected labels
+      createTask(projectId, {
+        ...values,
+        labelIds: selectedLabels,
       });
       
-      handleClose();
+      // Reset form and close modal
+      form.reset();
+      setSelectedLabels([]);
+      onClose();
     } catch (error) {
-      console.error("Error creating task:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create task. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Failed to create task:", error);
     }
   };
-  
-  const handleLabelToggle = (labelId: string) => {
+
+  const toggleLabel = (labelId: string) => {
     setSelectedLabels(prev => 
       prev.includes(labelId)
         ? prev.filter(id => id !== labelId)
         : [...prev, labelId]
     );
   };
-  
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
-  
-  const storyPointsOptions = [1, 2, 3, 5, 8, 13, 21];
-  
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
+          <DialogTitle>New Task</DialogTitle>
           <DialogDescription>
-            Add a new task to your project. Fill in the details below.
+            Create a new task for the project
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          <div>
-            <label className="text-sm font-medium mb-1 block">Title</label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Task title"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Task title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div>
-            <label className="text-sm font-medium mb-1 block">Description</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Task description"
-              className="min-h-[100px]"
+            
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe the task..." 
+                      className="min-h-[100px]" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Priority</label>
-              <Select 
-                value={priority} 
-                onValueChange={(value) => setPriority(value as TaskPriority)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  {priorityOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="todo">To Do</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="done">Done</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Priority</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="low">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-priority-low"></div>
+                            <span>Low</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="medium">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-priority-medium"></div>
+                            <span>Medium</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="high">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-priority-high"></div>
+                            <span>High</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
             
-            <div>
-              <label className="text-sm font-medium mb-1 block">Assignee</label>
-              <Select 
-                value={assigneeId} 
-                onValueChange={setAssigneeId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select assignee" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {users.map(user => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="assigneeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assignee</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Unassigned</SelectItem>
+                        {users.map(user => (
+                          <SelectItem key={user.id} value={user.id}>
+                            <div className="flex items-center gap-2">
+                              <UserAvatar src={user.avatar} name={user.name} size="sm" />
+                              <span>{user.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="storyPoints"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Story Points</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        {...field} 
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormDescription>Estimate of work complexity</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Due Date</label>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="dueDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Due Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="sprintId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sprint</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="No Sprint" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No Sprint</SelectItem>
+                        {sprints.map(sprint => (
+                          <SelectItem key={sprint.id} value={sprint.id}>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-gray-500" />
+                              <span>{sprint.name}</span>
+                              <Badge variant="outline" className="ml-2 text-xs">
+                                {sprint.status}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <FormLabel>Labels</FormLabel>
+              <div className="flex flex-wrap gap-2">
+                {selectedLabels.length > 0 ? (
+                  selectedLabels.map(id => {
+                    const label = availableLabels.find(l => l.id === id);
+                    if (!label) return null;
+                    
+                    return (
+                      <Badge 
+                        key={id} 
+                        style={{ backgroundColor: label.color }}
+                        className="text-white flex items-center gap-1"
+                      >
+                        {label.name}
+                        <X 
+                          className="h-3 w-3 cursor-pointer" 
+                          onClick={() => toggleLabel(id)} 
+                        />
+                      </Badge>
+                    );
+                  })
+                ) : (
+                  <span className="text-sm text-gray-500">No labels selected</span>
+                )}
+              </div>
+              
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dueDate ? format(dueDate, "PPP") : <span>Set due date</span>}
+                  <Button variant="outline" size="sm" className="mt-2">
+                    <Tag className="h-3.5 w-3.5 mr-1" />
+                    Add Label
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={setDueDate}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
+                <PopoverContent className="w-64 p-2">
+                  <div className="space-y-2">
+                    {availableLabels
+                      .filter(label => !selectedLabels.includes(label.id))
+                      .map(label => (
+                        <div
+                          key={label.id}
+                          className="flex items-center justify-between p-2 hover:bg-gray-100 rounded cursor-pointer"
+                          onClick={() => toggleLabel(label.id)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: label.color }}
+                            ></div>
+                            <span className="text-sm">{label.name}</span>
+                          </div>
+                          <Plus className="h-4 w-4 text-gray-400" />
+                        </div>
+                      ))}
+                    {availableLabels.length === selectedLabels.length && (
+                      <p className="text-sm text-gray-500 p-2">All labels added</p>
+                    )}
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
             
-            <div>
-              <label className="text-sm font-medium mb-1 block">Story Points</label>
-              <Select
-                value={storyPoints?.toString()}
-                onValueChange={(value) => setStoryPoints(parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select story points" />
-                </SelectTrigger>
-                <SelectContent>
-                  {storyPointsOptions.map(points => (
-                    <SelectItem key={points} value={points.toString()}>
-                      {points}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Epic</label>
-              <Select
-                value={selectedEpicId}
-                onValueChange={setSelectedEpicId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select epic" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {epics.map(epic => (
-                    <SelectItem key={epic.id} value={epic.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: epic.color }}
-                        />
-                        {epic.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Sprint</label>
-              <Select
-                value={selectedSprintId}
-                onValueChange={setSelectedSprintId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select sprint" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {sprints.map(sprint => (
-                    <SelectItem key={sprint.id} value={sprint.id}>
-                      <div className="flex items-center gap-2">
-                        <Timer size={14} className="text-gray-500" />
-                        {sprint.name} ({sprint.status})
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div>
-            <label className="text-sm font-medium mb-1 block">Labels</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start">
-                  <Tag className="mr-2 h-4 w-4" />
-                  {selectedLabels.length > 0 
-                    ? `${selectedLabels.length} label${selectedLabels.length > 1 ? 's' : ''} selected` 
-                    : 'Select labels'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56 p-2">
-                <div className="space-y-2">
-                  {availableLabels.map(label => (
-                    <div 
-                      key={label.id}
-                      className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer"
-                      onClick={() => handleLabelToggle(label.id)}
-                    >
-                      <div className="flex items-center h-4 w-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedLabels.includes(label.id)}
-                          onChange={() => {}}
-                          className="h-4 w-4"
-                        />
-                      </div>
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: label.color }}
-                      />
-                      <span className="text-sm">{label.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-            
-            {selectedLabels.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {selectedLabels.map(labelId => {
-                  const label = availableLabels.find(l => l.id === labelId);
-                  if (!label) return null;
-                  return (
-                    <Badge 
-                      key={label.id} 
-                      style={{ backgroundColor: label.color }} 
-                      className="text-white"
-                      onClick={() => handleLabelToggle(label.id)}
-                    >
-                      {label.name}
-                    </Badge>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit}>Create Task</Button>
-        </DialogFooter>
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
+              <Button type="submit">Create Task</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

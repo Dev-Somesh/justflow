@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layouts/AppLayout';
 import { useProject } from '@/contexts/ProjectContext';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { 
   Select,
@@ -53,23 +54,58 @@ import {
   Briefcase,
   UserCog,
   CheckCircle,
-  X
+  X,
+  Save,
+  RefreshCcw
 } from 'lucide-react';
 
 const Team = () => {
-  const { users, currentProject, getUserWorkload, tasks } = useProject();
+  const { users, currentProject, getUserWorkload, tasks, updateUserProfile } = useProject();
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
   const [isUserEditOpen, setIsUserEditOpen] = useState(false);
-  const [availabilityData, setAvailabilityData] = useState<Record<string, number>>({
-    'user-1': 85,
-    'user-2': 60,
-    'user-3': 90,
+  const [userFormData, setUserFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: '',
+    department: '',
+    bio: '',
+    active: true,
   });
+  const [availabilityData, setAvailabilityData] = useState<Record<string, number>>({});
   const { toast } = useToast();
+  
+  // Load availability data
+  useEffect(() => {
+    // In a real app, this would come from an API
+    const tempData: Record<string, number> = {};
+    users.forEach(user => {
+      const workload = currentProject ? getUserWorkload(currentProject.id, user.id) : { estimatedHours: 0 };
+      // Calculate availability as inverse of workload (simple algorithm)
+      const busyPercent = Math.min(100, (workload.estimatedHours / 40) * 100);
+      tempData[user.id] = Math.max(0, 100 - busyPercent);
+    });
+    setAvailabilityData(tempData);
+  }, [users, currentProject, getUserWorkload]);
   
   const selectedUserData = users.find(u => u.id === selectedUser);
   const userTasks = tasks.filter(t => t.assigneeId === selectedUser);
+  
+  // When user profile is opened, initialize form data
+  useEffect(() => {
+    if (selectedUserData) {
+      setUserFormData({
+        name: selectedUserData.name,
+        email: selectedUserData.email,
+        phone: selectedUserData.phone || '+1 (555) 123-4567', // Default value if not available
+        role: selectedUserData.role,
+        department: selectedUserData.department || 'Engineering', // Default value if not available
+        bio: selectedUserData.bio || 'No bio available', // Default value if not available
+        active: selectedUserData.active !== false, // Default to true if not specified
+      });
+    }
+  }, [selectedUserData]);
   
   const handleViewProfile = (userId: string) => {
     setSelectedUser(userId);
@@ -91,19 +127,66 @@ const Team = () => {
   };
   
   const handleDeactivateUser = () => {
-    toast({
-      title: "User deactivated",
-      description: `User ${selectedUserData?.name} has been deactivated.`,
-    });
+    if (selectedUserData) {
+      // Update user's active status
+      updateUserProfile(selectedUserData.id, { active: false });
+      toast({
+        title: "User deactivated",
+        description: `User ${selectedUserData.name} has been deactivated.`,
+      });
+    }
     setIsUserProfileOpen(false);
   };
   
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { id, value } = e.target;
+    setUserFormData(prev => ({ ...prev, [id]: value }));
+  };
+  
+  const handleSwitchChange = (checked: boolean) => {
+    setUserFormData(prev => ({ ...prev, active: checked }));
+  };
+  
+  const handleSelectChange = (field: string, value: string) => {
+    setUserFormData(prev => ({ ...prev, [field]: value }));
+  };
+  
   const handleSaveUser = () => {
-    toast({
-      title: "User updated",
-      description: `User ${selectedUserData?.name}'s profile has been updated.`,
-    });
+    if (selectedUserData) {
+      // Update user profile
+      updateUserProfile(selectedUserData.id, {
+        name: userFormData.name,
+        email: userFormData.email,
+        role: userFormData.role,
+        phone: userFormData.phone,
+        department: userFormData.department,
+        bio: userFormData.bio,
+        active: userFormData.active
+      });
+      
+      toast({
+        title: "User updated",
+        description: `User ${userFormData.name}'s profile has been updated.`,
+      });
+    }
     setIsUserEditOpen(false);
+  };
+  
+  const handleUpdateAvailability = () => {
+    // Simulate updating availability
+    const updatedData: Record<string, number> = {};
+    users.forEach(user => {
+      // Generate new random availability between 30 and 100
+      updatedData[user.id] = Math.floor(Math.random() * 70) + 30;
+    });
+    setAvailabilityData(updatedData);
+    
+    toast({
+      title: "Availabilities updated",
+      description: "Team member availabilities have been refreshed",
+    });
   };
   
   const getPerformanceRating = (userId: string) => {
@@ -314,12 +397,13 @@ const Team = () => {
               <div className="text-sm text-gray-500">
                 Last updated: {new Date().toLocaleDateString()}
               </div>
-              <Button variant="outline" size="sm" onClick={() => {
-                toast({
-                  title: "Availabilities updated",
-                  description: "Team member availabilities have been refreshed",
-                });
-              }}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleUpdateAvailability}
+                className="flex items-center gap-2"
+              >
+                <RefreshCcw className="h-4 w-4" />
                 Refresh Data
               </Button>
             </CardFooter>
@@ -442,12 +526,17 @@ const Team = () => {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Phone className="h-4 w-4 text-gray-500" />
-                  <span>+1 (555) 123-4567</span>
+                  <span>{selectedUserData.phone || '+1 (555) 123-4567'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Briefcase className="h-4 w-4 text-gray-500" />
-                  <span>Department: Engineering</span>
+                  <span>Department: {selectedUserData.department || 'Engineering'}</span>
                 </div>
+                {selectedUserData.bio && (
+                  <div className="pt-2 border-t">
+                    <p className="text-sm">{selectedUserData.bio}</p>
+                  </div>
+                )}
               </div>
               
               <div className="border-t pt-4">
@@ -527,6 +616,9 @@ const Team = () => {
               <UserCog className="h-5 w-5" />
               Edit User
             </DialogTitle>
+            <DialogDescription>
+              Make changes to the user profile here. Click save when you're done.
+            </DialogDescription>
           </DialogHeader>
           
           {selectedUserData && (
@@ -537,22 +629,38 @@ const Team = () => {
               
               <div className="grid gap-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" defaultValue={selectedUserData.name} />
+                <Input 
+                  id="name" 
+                  value={userFormData.name}
+                  onChange={handleInputChange} 
+                />
               </div>
               
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue={selectedUserData.email} />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={userFormData.email}
+                  onChange={handleInputChange}
+                />
               </div>
               
               <div className="grid gap-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" defaultValue="+1 (555) 123-4567" />
+                <Input 
+                  id="phone" 
+                  value={userFormData.phone}
+                  onChange={handleInputChange}
+                />
               </div>
               
               <div className="grid gap-2">
                 <Label htmlFor="role">Role</Label>
-                <Select defaultValue={selectedUserData.role}>
+                <Select 
+                  value={userFormData.role}
+                  onValueChange={(value) => handleSelectChange('role', value)}
+                >
                   <SelectTrigger id="role">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
@@ -568,7 +676,10 @@ const Team = () => {
               
               <div className="grid gap-2">
                 <Label htmlFor="department">Department</Label>
-                <Select defaultValue="Engineering">
+                <Select 
+                  value={userFormData.department}
+                  onValueChange={(value) => handleSelectChange('department', value)}
+                >
                   <SelectTrigger id="department">
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
@@ -584,11 +695,19 @@ const Team = () => {
               
               <div className="grid gap-2">
                 <Label htmlFor="bio">Bio</Label>
-                <Textarea id="bio" defaultValue="Backend developer with 5 years of experience in building scalable applications." />
+                <Textarea 
+                  id="bio" 
+                  value={userFormData.bio}
+                  onChange={handleInputChange}
+                />
               </div>
               
               <div className="flex items-center space-x-2">
-                <Switch id="active" defaultChecked />
+                <Switch 
+                  id="active" 
+                  checked={userFormData.active}
+                  onCheckedChange={handleSwitchChange}
+                />
                 <Label htmlFor="active">Active account</Label>
               </div>
             </div>
@@ -596,7 +715,10 @@ const Team = () => {
           
           <DialogFooter className="flex justify-between">
             <Button variant="outline" onClick={() => setIsUserEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveUser}>Save Changes</Button>
+            <Button onClick={handleSaveUser} className="flex items-center gap-2">
+              <Save className="h-4 w-4" />
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

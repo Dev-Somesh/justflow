@@ -1,278 +1,331 @@
 
-import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import AppLayout from '@/components/layouts/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { useProject } from '@/contexts/ProjectContext';
+import React, { useState, useMemo } from 'react';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { 
-  AlertCircle,
-  Clock,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  CalendarDays,
-  ListTodo,
-  Users
-} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AppLayout from '@/components/layouts/AppLayout';
+import { useProject } from '@/contexts/ProjectContext';
+import { format, isSameDay, addDays, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import UserAvatar from '@/components/ui/UserAvatar';
-import { format, addMonths, subMonths, isToday, isSameDay, isBefore } from 'date-fns';
+import { AlertCircle, Calendar as CalendarIcon, CheckCircle2 } from 'lucide-react';
 
-const CalendarPage = () => {
-  const { tasks, users, getUserById } = useProject();
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const navigate = useNavigate();
-
-  // Get tasks with due dates
-  const tasksWithDueDate = tasks.filter(task => task.dueDate);
+const CalendarPage: React.FC = () => {
+  const { currentProject, tasks, getSprints } = useProject();
+  const [date, setDate] = useState<Date>(new Date());
+  const [view, setView] = useState<'day' | 'upcoming'>('day');
   
-  // Function to get tasks by date (due date or creation date)
-  const getTasksByDate = (day: Date) => {
-    return tasks.filter(task => {
-      if (task.dueDate) {
-        const dueDate = new Date(task.dueDate);
-        return isSameDay(dueDate, day);
+  // Get all sprints
+  const sprints = currentProject ? getSprints(currentProject.id) : [];
+  
+  // Tasks with due dates
+  const tasksWithDueDates = useMemo(() => {
+    if (!currentProject) return [];
+    
+    return tasks
+      .filter(task => task.dueDate)
+      .sort((a, b) => {
+        return new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime();
+      });
+  }, [currentProject, tasks]);
+  
+  // Tasks due today
+  const todayTasks = useMemo(() => {
+    return tasksWithDueDates.filter(task => 
+      task.dueDate && isSameDay(new Date(task.dueDate), date)
+    );
+  }, [tasksWithDueDates, date]);
+  
+  // Tasks due in the next 7 days
+  const upcomingTasks = useMemo(() => {
+    const today = startOfDay(new Date());
+    const nextWeek = endOfDay(addDays(today, 7));
+    
+    return tasksWithDueDates.filter(task => {
+      const dueDate = new Date(task.dueDate!);
+      return isWithinInterval(dueDate, { start: today, end: nextWeek }) && 
+             !isSameDay(dueDate, date);
+    });
+  }, [tasksWithDueDates, date]);
+  
+  // Group tasks by sprint
+  const tasksBySprintId = useMemo(() => {
+    const result: Record<string, typeof tasksWithDueDates> = {};
+    
+    // Add a special category for tasks without a sprint
+    result['none'] = [];
+    
+    // Initialize with all sprints
+    sprints.forEach(sprint => {
+      result[sprint.id] = [];
+    });
+    
+    // Group tasks
+    const taskList = view === 'day' ? todayTasks : upcomingTasks;
+    taskList.forEach(task => {
+      if (task.sprintId) {
+        if (result[task.sprintId]) {
+          result[task.sprintId].push(task);
+        } else {
+          // If sprint doesn't exist in our map yet
+          result[task.sprintId] = [task];
+        }
       } else {
-        const createdDate = new Date(task.createdAt);
-        return isSameDay(createdDate, day);
+        // Tasks without sprint
+        result['none'].push(task);
       }
     });
-  };
-
-  // Custom day content to show tasks count
-  const renderDayContent = (day: Date) => {
-    const dayTasks = getTasksByDate(day);
-    const isPastDue = dayTasks.some(task => 
-      task.dueDate && task.status !== 'done' && isBefore(new Date(task.dueDate), new Date())
-    );
     
+    return result;
+  }, [sprints, todayTasks, upcomingTasks, view]);
+  
+  // Get task status badge styling
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'todo':
+        return <Badge variant="outline">To Do</Badge>;
+      case 'in-progress':
+        return <Badge className="bg-plane-blue">In Progress</Badge>;
+      case 'done':
+        return <Badge className="bg-green-500">Done</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+  
+  // Get priority indicator styling
+  const getPriorityIndicator = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return <div className="w-2 h-full bg-priority-high rounded-l-sm absolute left-0 top-0"></div>;
+      case 'medium':
+        return <div className="w-2 h-full bg-priority-medium rounded-l-sm absolute left-0 top-0"></div>;
+      case 'low':
+        return <div className="w-2 h-full bg-priority-low rounded-l-sm absolute left-0 top-0"></div>;
+      default:
+        return null;
+    }
+  };
+  
+  // If no project is selected
+  if (!currentProject) {
     return (
-      <div className="relative w-full h-full flex items-center justify-center">
-        <div>
-          {day.getDate()}
-          {dayTasks.length > 0 && (
-            <div className={`absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center text-[10px] text-white rounded-full ${isPastDue ? 'bg-red-500' : 'bg-blue-500'}`}>
-              {dayTasks.length}
-            </div>
-          )}
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center h-[70vh]">
+          <CalendarIcon size={48} className="text-gray-300 mb-4" />
+          <h2 className="text-xl font-semibold mb-2">No Project Selected</h2>
+          <p className="text-gray-500">Select a project to view calendar tasks</p>
         </div>
-      </div>
+      </AppLayout>
     );
-  };
-
-  const handlePrevMonth = () => {
-    setCurrentMonth(prev => subMonths(prev, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentMonth(prev => addMonths(prev, 1));
-  };
-
-  const handleTaskClick = (taskId: string) => {
-    navigate(`/board?task=${taskId}`);
-  };
-
+  }
+  
   return (
     <AppLayout>
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Calendar</h1>
-          <p className="text-gray-500">View your tasks in a calendar layout</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate('/board')}>
-            <ListTodo className="h-4 w-4 mr-2" />
-            Board View
-          </Button>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Calendar</h1>
+        <p className="text-gray-500">Track tasks and deadlines</p>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <Card className="lg:col-span-8">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle>Task Calendar</CardTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={handlePrevMonth}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="font-medium">
-                {format(currentMonth, 'MMMM yyyy')}
-              </div>
-              <Button variant="outline" size="icon" onClick={handleNextMonth}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Select Date</CardTitle>
+            <CardDescription>View tasks by date</CardDescription>
           </CardHeader>
           <CardContent>
-            <CalendarComponent
+            <Calendar
               mode="single"
               selected={date}
-              onSelect={setDate}
+              onSelect={(newDate) => newDate && setDate(newDate)}
               className="rounded-md border"
-              month={currentMonth}
-              onMonthChange={setCurrentMonth}
-              components={{
-                DayContent: ({ date }) => renderDayContent(date),
-              }}
+              // Highlight dates with tasks
               modifiers={{
-                today: (date) => isToday(date),
-                hasTasks: (date) => getTasksByDate(date).length > 0,
-                overdue: (date) => getTasksByDate(date).some(task => 
-                  task.dueDate && task.status !== 'done' && isBefore(new Date(task.dueDate), new Date())
-                ),
+                highlighted: tasksWithDueDates.map(task => new Date(task.dueDate!))
               }}
-              modifiersStyles={{
-                hasTasks: { fontWeight: 'bold' },
-                overdue: { color: 'var(--color-red)' }
+              modifiersClassNames={{
+                highlighted: "bg-primary/10"
               }}
             />
-          </CardContent>
-          <CardFooter className="pt-0 border-t flex justify-between">
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                <span>Tasks</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <span>Overdue</span>
-              </div>
+            
+            <div className="flex justify-between items-center mt-4">
+              <p className="text-sm text-gray-500">
+                Selected: <span className="font-medium">{format(date, 'PPP')}</span>
+              </p>
+              <Badge variant="outline">{todayTasks.length} tasks</Badge>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setDate(new Date())}>
-              Today
-            </Button>
-          </CardFooter>
+          </CardContent>
         </Card>
-
-        <div className="lg:col-span-4 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {date && date.toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {date && getTasksByDate(date).length > 0 ? (
-                <div className="space-y-3">
-                  {getTasksByDate(date).map(task => {
-                    const isPastDue = task.dueDate && 
-                      task.status !== 'done' && 
-                      isBefore(new Date(task.dueDate), new Date());
-                    
-                    const assignee = task.assigneeId ? getUserById(task.assigneeId) : undefined;
-                    
-                    return (
-                      <div 
-                        key={task.id} 
-                        className="p-3 rounded-md border border-gray-200 cursor-pointer hover:border-gray-300 transition-colors"
-                        onClick={() => handleTaskClick(task.id)}
-                      >
-                        <div className="flex justify-between items-start">
-                          <h3 className="font-medium">{task.title}</h3>
-                          <Badge variant={task.status === 'done' ? 'outline' : isPastDue ? 'destructive' : 'secondary'}>
-                            {task.status === 'done' ? 'Completed' : isPastDue ? 'Overdue' : 'Pending'}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</p>
-                        
-                        <div className="flex justify-between items-center mt-3 text-xs text-gray-500">
-                          {task.dueDate && (
-                            <div className="flex items-center gap-1">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="flex items-center gap-1">
-                                      <CalendarDays className="h-3.5 w-3.5" />
-                                      <span>Due: {format(new Date(task.dueDate), 'MMM d')}</span>
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Due: {format(new Date(task.dueDate), 'MMM d, yyyy')}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          )}
+        
+        <div className="md:col-span-2">
+          <Tabs defaultValue="day" onValueChange={(value) => setView(value as 'day' | 'upcoming')}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="day">Today's Tasks</TabsTrigger>
+              <TabsTrigger value="upcoming">Upcoming Tasks</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="day" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tasks for {format(date, 'PPPP')}</CardTitle>
+                  <CardDescription>
+                    {todayTasks.length === 0 ? 
+                      'No tasks due on this day' : 
+                      `${todayTasks.length} task${todayTasks.length > 1 ? 's' : ''} due`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {Object.entries(tasksBySprintId).map(([sprintId, sprintTasks]) => {
+                      // Skip if no tasks in this sprint
+                      if (sprintTasks.length === 0) return null;
+                      
+                      // Get sprint name
+                      const sprint = sprints.find(s => s.id === sprintId);
+                      const sprintName = sprint ? sprint.name : 'No Sprint';
+                      
+                      return (
+                        <div key={sprintId} className="space-y-3">
+                          <h3 className="font-medium text-sm text-gray-500">{sprintName}</h3>
                           
-                          {assignee && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div>
-                                    <UserAvatar src={assignee.avatar} name={assignee.name} size="sm" />
+                          <div className="space-y-2">
+                            {sprintTasks.map(task => (
+                              <div 
+                                key={task.id} 
+                                className="border rounded-md p-3 relative hover:shadow-sm transition-shadow"
+                              >
+                                {getPriorityIndicator(task.priority)}
+                                <div className="pl-3">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-medium">{task.title}</h4>
+                                    {getStatusBadge(task.status)}
                                   </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Assigned to: {assignee.name}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
+                                  
+                                  <p className="text-sm text-gray-500 line-clamp-2 mb-3">
+                                    {task.description || 'No description'}
+                                  </p>
+                                  
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-1">
+                                      {task.assigneeId ? (
+                                        <UserAvatar 
+                                          name="User" 
+                                          size="sm" 
+                                          className="h-6 w-6" 
+                                        />
+                                      ) : (
+                                        <span className="text-xs text-gray-500">Unassigned</span>
+                                      )}
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-xs text-gray-500">
+                                        {task.storyPoints} pts
+                                      </div>
+                                      <div className="bg-gray-100 text-xs rounded px-2 py-1">
+                                        {format(new Date(task.dueDate!), 'MMM d')}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
+                      );
+                    })}
+                    
+                    {todayTasks.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                        <CheckCircle2 className="h-12 w-12 mb-2 opacity-30" />
+                        <p>No tasks due today</p>
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-gray-500">No tasks scheduled for this day</p>
-              )}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-                Upcoming Deadlines
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {tasksWithDueDate.length > 0 ? (
-                <div className="space-y-2">
-                  {tasksWithDueDate
-                    .filter(task => task.status !== 'done')
-                    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-                    .slice(0, 5)
-                    .map(task => (
-                      <div 
-                        key={task.id}
-                        className="flex items-center justify-between p-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50 rounded-sm"
-                        onClick={() => handleTaskClick(task.id)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            isBefore(new Date(task.dueDate!), new Date()) 
-                              ? 'bg-red-500' 
-                              : 'bg-amber-500'
-                          }`}></div>
-                          <span className="text-sm">{task.title}</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="upcoming" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Upcoming Tasks</CardTitle>
+                  <CardDescription>
+                    Tasks due in the next 7 days
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {Object.entries(tasksBySprintId).map(([sprintId, sprintTasks]) => {
+                      // Skip if no tasks in this sprint
+                      if (sprintTasks.length === 0) return null;
+                      
+                      // Get sprint name
+                      const sprint = sprints.find(s => s.id === sprintId);
+                      const sprintName = sprint ? sprint.name : 'No Sprint';
+                      
+                      return (
+                        <div key={sprintId} className="space-y-3">
+                          <h3 className="font-medium text-sm text-gray-500">{sprintName}</h3>
+                          
+                          <div className="space-y-2">
+                            {sprintTasks.map(task => (
+                              <div 
+                                key={task.id} 
+                                className="border rounded-md p-3 relative hover:shadow-sm transition-shadow"
+                              >
+                                {getPriorityIndicator(task.priority)}
+                                <div className="pl-3">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-medium">{task.title}</h4>
+                                    {getStatusBadge(task.status)}
+                                  </div>
+                                  
+                                  <p className="text-sm text-gray-500 line-clamp-2 mb-3">
+                                    {task.description || 'No description'}
+                                  </p>
+                                  
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-1">
+                                      {task.assigneeId ? (
+                                        <UserAvatar 
+                                          name="User" 
+                                          size="sm" 
+                                          className="h-6 w-6" 
+                                        />
+                                      ) : (
+                                        <span className="text-xs text-gray-500">Unassigned</span>
+                                      )}
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-xs text-gray-500">
+                                        {task.storyPoints} pts
+                                      </div>
+                                      <div className="bg-gray-100 text-xs rounded px-2 py-1 font-medium">
+                                        {format(new Date(task.dueDate!), 'MMM d')}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <span className="text-xs text-gray-500">
-                          {format(new Date(task.dueDate!), 'MMM d')}
-                        </span>
+                      );
+                    })}
+                    
+                    {upcomingTasks.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                        <CheckCircle2 className="h-12 w-12 mb-2 opacity-30" />
+                        <p>No upcoming tasks in the next 7 days</p>
                       </div>
-                    ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">No upcoming deadlines</p>
-              )}
-            </CardContent>
-          </Card>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </AppLayout>
