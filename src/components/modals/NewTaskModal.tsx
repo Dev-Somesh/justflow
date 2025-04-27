@@ -267,7 +267,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                   <SelectValue placeholder="Select epic" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {epics.map(epic => (
                     <SelectItem key={epic.id} value={epic.id}>
                       <div className="flex items-center gap-2">
@@ -293,7 +293,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                   <SelectValue placeholder="Select sprint" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {sprints.map(sprint => (
                     <SelectItem key={sprint.id} value={sprint.id}>
                       <div className="flex items-center gap-2">

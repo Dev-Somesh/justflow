@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   useProject, 
@@ -66,7 +65,6 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
     onFilterChange('', {});
   };
 
-  // Count active filters
   const activeFilterCount = Object.values(filters).filter(
     value => Array.isArray(value) ? value.length > 0 : value !== undefined
   ).length;
@@ -155,7 +153,7 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
                     <SelectValue placeholder="Filter by assignee" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any assignee</SelectItem>
+                    <SelectItem value="any">Any assignee</SelectItem>
                     <SelectItem value="unassigned">Unassigned</SelectItem>
                     {users.map(user => (
                       <SelectItem key={user.id} value={user.id}>
@@ -262,7 +260,6 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
         </Popover>
       </div>
       
-      {/* Active filters display */}
       {activeFilterCount > 0 && (
         <div className="flex flex-wrap gap-1 mb-4">
           {query && (

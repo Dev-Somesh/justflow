@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -325,10 +324,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Product Manager">Product Manager</SelectItem>
-                      <SelectItem value="Developer">Developer</SelectItem>
-                      <SelectItem value="UI Designer">UI Designer</SelectItem>
-                      <SelectItem value="QA Engineer">QA Engineer</SelectItem>
+                      <SelectItem value="product-manager">Product Manager</SelectItem>
+                      <SelectItem value="developer">Developer</SelectItem>
+                      <SelectItem value="ui-designer">UI Designer</SelectItem>
+                      <SelectItem value="qa-engineer">QA Engineer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
