@@ -73,7 +73,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
   const project = projects.find(p => p.id === projectId);
   const task = project?.tasks.find(t => t.id === taskId);
   
-  // Get available sprints
   const sprints = getSprints(projectId);
   
   if (!task || !project) {
@@ -403,7 +402,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
             <TimeTracker
               taskId={task.id}
               projectId={projectId}
-              userId={users[0].id} // Current user
               timeRecords={task.timeRecords || []}
               onAddTimeRecord={handleAddTimeRecord}
             />

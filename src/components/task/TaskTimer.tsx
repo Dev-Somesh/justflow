@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +19,6 @@ const TaskTimer: React.FC<TaskTimerProps> = ({ projectId, taskId, onSave }) => {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [savedTime, setSavedTime] = useState(0);
   
-  // Timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     
@@ -39,11 +37,9 @@ const TaskTimer: React.FC<TaskTimerProps> = ({ projectId, taskId, onSave }) => {
   
   const handleToggleTimer = () => {
     if (!isRunning) {
-      // Start the timer
       setStartTime(new Date());
       setIsRunning(true);
     } else {
-      // Pause the timer
       setIsRunning(false);
     }
   };
@@ -52,11 +48,9 @@ const TaskTimer: React.FC<TaskTimerProps> = ({ projectId, taskId, onSave }) => {
     if (!selectedUser) return;
     
     try {
-      // Calculate duration in minutes
       const durationInMinutes = Math.round(seconds / 60);
       setSavedTime(prevSaved => prevSaved + seconds);
       
-      // Record the time
       addTimeRecord(projectId, taskId, {
         userId: selectedUser,
         duration: durationInMinutes,
@@ -64,7 +58,6 @@ const TaskTimer: React.FC<TaskTimerProps> = ({ projectId, taskId, onSave }) => {
         createdAt: new Date().toISOString(),
       });
       
-      // Reset the timer and note
       setSeconds(0);
       setNote('');
       setIsRunning(false);

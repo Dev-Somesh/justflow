@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
+import type { TaskFilters as TaskFiltersType } from '@/contexts/ProjectContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,10 +46,8 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
   
-  // Get all sprints for the project
   const sprints = getSprints(projectId);
   
-  // Update filter count
   useEffect(() => {
     let count = 0;
     if (filters.status && filters.status.length) count++;
@@ -60,19 +59,16 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
     setActiveFiltersCount(count);
   }, [filters]);
   
-  // Notify parent of filter changes
   useEffect(() => {
     onFilterChange(search, filters);
   }, [search, filters, onFilterChange]);
   
-  // Clear all filters
   const handleClearFilters = () => {
     setSearch('');
     setFilters({});
     setDateRange(undefined);
   };
   
-  // Toggle status filter
   const toggleStatusFilter = (status: string) => {
     setFilters(prev => {
       const currentStatuses = prev.status || [];
@@ -87,7 +83,6 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
     });
   };
   
-  // Toggle priority filter
   const togglePriorityFilter = (priority: string) => {
     setFilters(prev => {
       const currentPriorities = prev.priority || [];
@@ -102,7 +97,6 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
     });
   };
   
-  // Toggle assignee filter
   const toggleAssigneeFilter = (userId: string) => {
     setFilters(prev => {
       const currentAssignees = prev.assigneeId || [];
@@ -117,7 +111,6 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
     });
   };
   
-  // Toggle label filter
   const toggleLabelFilter = (labelId: string) => {
     setFilters(prev => {
       const currentLabels = prev.labelIds || [];
@@ -132,7 +125,6 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
     });
   };
   
-  // Toggle sprint filter
   const toggleSprintFilter = (sprintId: string) => {
     setFilters(prev => {
       const currentSprints = prev.sprintId || [];
@@ -147,7 +139,6 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
     });
   };
   
-  // Update date range filter
   const handleDateRangeSelect = (range: DateRange | undefined) => {
     setDateRange(range);
     setFilters(prev => ({
@@ -157,7 +148,6 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
     }));
   };
   
-  // Check if a filter is active
   const isFilterActive = (type: string, value: string) => {
     switch (type) {
       case 'status':

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useProject, Sprint, Task } from '@/contexts/ProjectContext';
 import { 
@@ -28,6 +27,12 @@ interface SprintPlanningProps {
   sprintId?: string; // If provided, edit mode, otherwise create mode
 }
 
+interface SprintCapacity {
+  totalStoryPoints: number;
+  assignedStoryPoints: number;
+  remainingCapacity: number;
+}
+
 const SprintPlanning: React.FC<SprintPlanningProps> = ({ 
   projectId,
   sprintId
@@ -43,23 +48,21 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
   
   const sprints = getSprints(projectId);
   const currentSprint = sprintId ? sprints.find(s => s.id === sprintId) : null;
-  const sprintTasks = currentSprint ? getTasksBySprint(projectId, currentSprint.id) : [];
+  const sprintTasks = currentSprint ? getTasksBySprint(currentSprint.id) : [];
   
   const backlogTasks = getTasksByStatus(projectId, 'todo')
     .filter(task => !task.sprintId);
   
-  // Sprint capacity info
-  const capacity = currentSprint 
-    ? getSprintCapacity(projectId, currentSprint.id)
+  const capacity: SprintCapacity = currentSprint 
+    ? getSprintCapacity(currentSprint.id) as SprintCapacity
     : { totalStoryPoints: 0, assignedStoryPoints: 0, remainingCapacity: 0 };
   
-  // State for selected task to add to sprint
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   
   const handleAddToSprint = (taskId: string) => {
     if (!currentSprint) return;
     
-    addTaskToSprint(projectId, taskId, currentSprint.id);
+    addTaskToSprint(taskId, currentSprint.id);
     setSelectedTaskIds(prev => prev.filter(id => id !== taskId));
   };
   
@@ -75,7 +78,7 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
     if (!currentSprint || selectedTaskIds.length === 0) return;
     
     selectedTaskIds.forEach(taskId => {
-      addTaskToSprint(projectId, taskId, currentSprint.id);
+      addTaskToSprint(taskId, currentSprint.id);
     });
     
     setSelectedTaskIds([]);
@@ -85,7 +88,6 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
     return tasks.reduce((sum, task) => sum + (task.storyPoints || 0), 0);
   };
   
-  // Calculate if sprint is overloaded
   const isSprintOverloaded = capacity.assignedStoryPoints > capacity.totalStoryPoints;
   
   if (!currentSprint) {
@@ -166,7 +168,6 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
       </Card>
       
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-        {/* Backlog Tasks */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Backlog Tasks</CardTitle>
@@ -242,7 +243,6 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
           </CardFooter>
         </Card>
         
-        {/* Sprint Tasks */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Sprint Tasks</CardTitle>

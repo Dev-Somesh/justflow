@@ -79,19 +79,17 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
     },
   });
 
-  // Get all sprints for the current project
   const sprints = getSprints(projectId);
 
   const handleSubmit = (values: TaskFormValues) => {
     try {
-      // Create a new task with form values and selected labels
       createTask(projectId, {
         ...values,
-        description: values.description || "", // Ensure description is not undefined
+        description: values.description || "",
         labelIds: selectedLabels,
+        dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
       });
       
-      // Reset form and close modal
       form.reset();
       setSelectedLabels([]);
       onClose();

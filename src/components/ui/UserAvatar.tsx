@@ -14,6 +14,7 @@ export interface UserAvatarProps {
   size?: 'sm' | 'md' | 'lg';
   showTooltip?: boolean;
   onClick?: () => void;
+  className?: string; // Add className prop
 }
 
 const getInitials = (name: string): string => {
@@ -30,7 +31,8 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   name, 
   size = 'md', 
   showTooltip = false,
-  onClick
+  onClick,
+  className = '' // Initialize className with an empty string
 }) => {
   const sizeClasses = {
     sm: 'h-8 w-8 text-xs',
@@ -40,7 +42,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
 
   const avatar = (
     <Avatar 
-      className={`${sizeClasses[size]} ${onClick ? 'cursor-pointer' : ''}`}
+      className={`${sizeClasses[size]} ${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
     >
       {src ? <AvatarImage src={src} alt={name} /> : null}
