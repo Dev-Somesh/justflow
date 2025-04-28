@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useProject, Sprint, Task, SprintCapacity } from '@/contexts/ProjectContext';
 import { 
@@ -27,12 +28,6 @@ interface SprintPlanningProps {
   sprintId?: string;
 }
 
-interface SprintCapacity {
-  totalStoryPoints: number;
-  assignedStoryPoints: number;
-  remainingCapacity: number;
-}
-
 const SprintPlanning: React.FC<SprintPlanningProps> = ({ 
   projectId,
   sprintId
@@ -53,7 +48,7 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
   const backlogTasks = getTasksByStatus(projectId, 'todo')
     .filter(task => !task.sprintId);
   
-  const capacity: SprintCapacity = currentSprint 
+  const capacity = currentSprint 
     ? getSprintCapacity(currentSprint.id)
     : { totalStoryPoints: 0, assignedStoryPoints: 0, remainingCapacity: 0 };
   
