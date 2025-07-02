@@ -395,6 +395,7 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
                 onSelect={handleDateRangeSelect}
                 numberOfMonths={1}
                 initialFocus
+                className="animate-fade-in"
               />
             </PopoverContent>
           </Popover>

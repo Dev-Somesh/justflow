@@ -6,9 +6,10 @@ import TaskFiltersComponent from './TaskFilters';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Plus, RefreshCcw, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import EmptyState from '@/components/ui/EmptyState';
+import SkeletonCard from '@/components/ui/SkeletonCard';
 
 interface KanbanBoardProps {
   projectId: string;
@@ -30,9 +31,9 @@ interface ColumnConfig {
 }
 
 const columns: ColumnConfig[] = [
-  { id: 'todo', title: 'To Do', color: 'bg-gray-200' },
-  { id: 'in-progress', title: 'In Progress', color: 'bg-plane-blue' },
-  { id: 'done', title: 'Done', color: 'bg-green-500' },
+  { id: 'todo', title: 'To Do', color: 'bg-status-todo' },
+  { id: 'in-progress', title: 'In Progress', color: 'bg-status-in-progress' },
+  { id: 'done', title: 'Done', color: 'bg-status-done' },
 ];
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ 
@@ -196,29 +197,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       className="bg-gray-50 rounded-md p-3 min-h-[300px] flex-1"
                     >
                       {isLoading ? (
-                        // Loading skeletons
+                        // Enhanced loading skeletons
                         [...Array(3)].map((_, index) => (
-                          <Card key={`skeleton-${index}`} className="mb-3 border border-gray-200">
-                            <CardContent className="p-3">
-                              <div className="flex items-start gap-2 mb-2">
-                                <Skeleton className="w-1 h-16 rounded-full" />
-                                <div className="flex-1">
-                                  <Skeleton className="h-4 w-3/4 mb-2" />
-                                  <Skeleton className="h-4 w-1/2" />
-                                </div>
-                              </div>
-                              <Skeleton className="h-3 w-full mt-2" />
-                              <Skeleton className="h-3 w-4/5 mt-1" />
-                              
-                              <div className="flex justify-between items-center mt-4">
-                                <Skeleton className="h-6 w-6 rounded-full" />
-                                <div className="flex gap-2">
-                                  <Skeleton className="h-4 w-10" />
-                                  <Skeleton className="h-4 w-8" />
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
+                          <SkeletonCard 
+                            key={`skeleton-${index}`} 
+                            className="mb-3 animate-fade-in"
+                            showHeader={true}
+                            showAvatar={true}
+                            lines={2}
+                          />
                         ))
                       ) : (
                         tasks.map((task, index) => (
@@ -239,8 +226,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         ))
                       )}
                       {!isLoading && tasks.length === 0 && (
-                        <div className="flex items-center justify-center h-full">
-                          <p className="text-sm text-gray-400">No tasks</p>
+                        <div className="flex items-center justify-center h-48">
+                          <EmptyState
+                            icon={Plus}
+                            title="No tasks yet"
+                            description={`Add your first ${column.title.toLowerCase()} task to get started`}
+                            action={{
+                              label: "Add Task",
+                              onClick: () => onAddTask(column.id)
+                            }}
+                          />
                         </div>
                       )}
                       {provided.placeholder}

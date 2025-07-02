@@ -23,17 +23,18 @@ const Index = () => {
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const { projects, setCurrentProject, tasks, addTask } = useProject();
   
-  // Simple authentication check - in a real app, this would check for a token
+  // Authentication check with enhanced error handling
   useEffect(() => {
-    console.log("Dashboard page loaded, checking authentication");
-    // Check if user was redirected from login page
-    const loginSuccess = sessionStorage.getItem('loginSuccess');
-    
-    if (loginSuccess === 'true') {
-      console.log("User is authenticated");
-      setIsAuthenticated(true);
-    } else {
-      console.log("User is not authenticated, navigating to login");
+    try {
+      const loginSuccess = sessionStorage.getItem('loginSuccess');
+      
+      if (loginSuccess === 'true') {
+        setIsAuthenticated(true);
+      } else {
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error('Authentication check failed:', error);
       navigate('/login');
     }
   }, [navigate]);
@@ -82,7 +83,7 @@ const Index = () => {
     );
   }
 
-  console.log("Rendering dashboard with authenticated user");
+  // Dashboard rendering with authenticated user
 
   return (
     <AppLayout>

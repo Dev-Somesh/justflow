@@ -53,7 +53,6 @@ const Board = () => {
       
       setActiveFilters(filters);
     } catch (err) {
-      console.error("Error processing filters:", err);
       setError("Failed to load filters. Please refresh the page.");
     }
   }, [location.search, tasks]);
@@ -84,7 +83,6 @@ const Board = () => {
       url.searchParams.set('task', taskId);
       window.history.pushState({}, '', url);
     } catch (err) {
-      console.error("Error handling task click:", err);
       toast({
         title: "Error",
         description: "Failed to open task details. Please try again.",
@@ -98,7 +96,6 @@ const Board = () => {
       setNewTaskStatus(status);
       setIsNewTaskModalOpen(true);
     } catch (err) {
-      console.error("Error handling add task:", err);
       toast({
         title: "Error",
         description: "Failed to open the new task form. Please try again.",
@@ -116,7 +113,6 @@ const Board = () => {
       url.searchParams.delete('task');
       window.history.pushState({}, '', url);
     } catch (err) {
-      console.error("Error closing task modal:", err);
       // Still try to close the modal even if URL update fails
       setIsTaskModalOpen(false);
     }
