@@ -322,6 +322,23 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const [currentProject, setCurrentProjectState] = useState<Project | null>(initialProjects[0] || null);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
+  // Auto-select first project if none is selected
+  React.useEffect(() => {
+    if (projects.length > 0 && !currentProject) {
+      setCurrentProjectState(projects[0]);
+    }
+  }, [projects, currentProject]);
+
+  // Update currentProject reference when projects change
+  React.useEffect(() => {
+    if (currentProject) {
+      const updatedProject = projects.find(p => p.id === currentProject.id);
+      if (updatedProject && updatedProject !== currentProject) {
+        setCurrentProjectState(updatedProject);
+      }
+    }
+  }, [projects, currentProject]);
+
   const generateId = () => {
     return Math.random().toString(36).substring(2, 15);
   };

@@ -14,7 +14,8 @@ import { Progress } from '@/components/ui/progress';
 import { CalendarClock, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NewTaskModal from '@/components/modals/NewTaskModal';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -69,6 +70,11 @@ const Index = () => {
       title: "Task created",
       description: "Your new task has been successfully created.",
     });
+  };
+
+  // Function to close modal without creating task
+  const handleModalClose = () => {
+    setIsNewTaskModalOpen(false);
   };
 
   // If not authenticated, show nothing while redirecting
@@ -218,12 +224,17 @@ const Index = () => {
       </div>
       
       {/* New Task Modal */}
-      <NewTaskModal 
-        projectId={firstProject?.id || 'project-1'}
-        initialStatus="todo"
-        isOpen={isNewTaskModalOpen}
-        onClose={() => setIsNewTaskModalOpen(false)}
-      />
+      {isNewTaskModalOpen && (
+        <ErrorBoundary>
+           <NewTaskModal 
+             projectId={firstProject?.id || 'project-1'}
+             initialStatus="todo"
+             isOpen={isNewTaskModalOpen}
+             onClose={handleModalClose}
+             onSuccess={handleTaskCreated}
+           />
+        </ErrorBoundary>
+      )}
     </AppLayout>
   );
 };

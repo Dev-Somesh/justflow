@@ -10,7 +10,8 @@ import { Plus, Filter, SlidersHorizontal, AlarmClockOff } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SprintSelector from '@/components/sprint/SprintSelector';
 import StoryPointsInfo from '@/components/dashboard/StoryPointsInfo';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const Board = () => {
@@ -102,6 +103,14 @@ const Board = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleTaskCreated = () => {
+    setIsNewTaskModalOpen(false);
+    toast({
+      title: "Task created",
+      description: "Your new task has been successfully created.",
+    });
   };
   
   const handleCloseTaskModal = () => {
@@ -197,12 +206,17 @@ const Board = () => {
       />
       
       {/* New Task Modal */}
-      <NewTaskModal 
-        projectId={currentProject.id}
-        initialStatus={newTaskStatus}
-        isOpen={isNewTaskModalOpen}
-        onClose={() => setIsNewTaskModalOpen(false)}
-      />
+      {isNewTaskModalOpen && (
+        <ErrorBoundary>
+          <NewTaskModal 
+            projectId={currentProject.id}
+            initialStatus={newTaskStatus}
+            isOpen={isNewTaskModalOpen}
+            onClose={() => setIsNewTaskModalOpen(false)}
+            onSuccess={handleTaskCreated}
+          />
+        </ErrorBoundary>
+      )}
     </AppLayout>
   );
 };

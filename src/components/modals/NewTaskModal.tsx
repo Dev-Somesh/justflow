@@ -43,6 +43,7 @@ interface NewTaskModalProps {
   initialStatus: TaskStatus;
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 const taskSchema = z.object({
@@ -63,6 +64,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
   initialStatus,
   isOpen,
   onClose,
+  onSuccess,
 }) => {
   const { users, createTask, availableLabels, getSprints } = useProject();
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
@@ -90,14 +92,15 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
         status: values.status,
         priority: values.priority,
         storyPoints: values.storyPoints,
-        assigneeId: values.assigneeId,
-        sprintId: values.sprintId,
+        assigneeId: values.assigneeId === "unassigned" ? undefined : values.assigneeId,
+        sprintId: values.sprintId === "none" ? undefined : values.sprintId,
         labelIds: selectedLabels,
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
       });
       
       form.reset();
       setSelectedLabels([]);
+      onSuccess?.();
       onClose();
     } catch (error) {
       console.error("Failed to create task:", error);
@@ -242,7 +245,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         {users.map(user => (
                           <SelectItem key={user.id} value={user.id}>
                             <div className="flex items-center gap-2">
@@ -332,7 +335,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No Sprint</SelectItem>
+                        <SelectItem value="none">No Sprint</SelectItem>
                         {sprints.map(sprint => (
                           <SelectItem key={sprint.id} value={sprint.id}>
                             <div className="flex items-center gap-2">
