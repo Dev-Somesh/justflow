@@ -191,7 +191,12 @@ const Team = () => {
   
   const getPerformanceRating = (userId: string) => {
     // In a real application, this would come from actual performance metrics
-    const ratings: Record<string, { score: number; metrics: any }> = {
+    type PerformanceMetrics = {
+      taskCompletion: number;
+      onTime: number;
+      quality: number;
+    };
+    const ratings: Record<string, { score: number; metrics: PerformanceMetrics }> = {
       'user-1': { 
         score: 4.5, 
         metrics: {
@@ -440,24 +445,36 @@ const Team = () => {
                         <div>
                           <div className="text-sm text-gray-500 mb-1">Task Completion</div>
                           <div className="flex items-center gap-2">
-                            <Progress value={performance.metrics.taskCompletion} className="h-2" />
-                            <span className="text-sm font-medium">{performance.metrics.taskCompletion}%</span>
+                            {'taskCompletion' in performance.metrics ? (
+                              <>
+                                <Progress value={performance.metrics.taskCompletion} className="h-2" />
+                                <span className="text-sm font-medium">{performance.metrics.taskCompletion}%</span>
+                              </>
+                            ) : null}
                           </div>
                         </div>
                         
                         <div>
                           <div className="text-sm text-gray-500 mb-1">On-Time Delivery</div>
                           <div className="flex items-center gap-2">
-                            <Progress value={performance.metrics.onTime} className="h-2" />
-                            <span className="text-sm font-medium">{performance.metrics.onTime}%</span>
+                            {'onTime' in performance.metrics ? (
+                              <>
+                                <Progress value={performance.metrics.onTime} className="h-2" />
+                                <span className="text-sm font-medium">{performance.metrics.onTime}%</span>
+                              </>
+                            ) : null}
                           </div>
                         </div>
                         
                         <div>
                           <div className="text-sm text-gray-500 mb-1">Quality</div>
                           <div className="flex items-center gap-2">
-                            <Progress value={performance.metrics.quality} className="h-2" />
-                            <span className="text-sm font-medium">{performance.metrics.quality}%</span>
+                            {'quality' in performance.metrics ? (
+                              <>
+                                <Progress value={performance.metrics.quality} className="h-2" />
+                                <span className="text-sm font-medium">{performance.metrics.quality}%</span>
+                              </>
+                            ) : null}
                           </div>
                         </div>
                       </div>

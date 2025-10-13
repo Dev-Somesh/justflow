@@ -26,9 +26,7 @@ interface Activity {
   userId: string;
   taskId: string;
   timestamp: string;
-  details: {
-    [key: string]: any;
-  };
+  details: Record<string, unknown>;
 }
 
 const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({ 
@@ -146,7 +144,9 @@ const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({
       case 'status_change':
         return `${user?.name || 'Someone'} marked "${task?.title || 'a task'}" as ${activity.details.to}`;
       case 'time_record':
-        return `${user?.name || 'Someone'} logged ${Math.round(activity.details.duration / 60)} hours on "${task?.title || 'a task'}"`;
+        return `${user?.name || 'Someone'} logged ${
+          typeof activity.details.duration === 'number' ? Math.round(activity.details.duration / 60) : 0
+        } hours on "${task?.title || 'a task'}"`;
       case 'task_created':
         return `${user?.name || 'Someone'} created task "${task?.title || 'Unknown'}"`;
       default:

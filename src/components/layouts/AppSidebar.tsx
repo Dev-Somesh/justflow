@@ -12,7 +12,12 @@ import {
   ChevronUp,
   Target,
   Shield,
+  Menu,
+  X,
+  GitBranch,
 } from 'lucide-react';
+import { cn, responsive } from '@/utils/theme';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useProject } from '@/contexts/ProjectContext';
@@ -37,6 +42,11 @@ const AppSidebar = () => {
       name: 'Dashboard',
       icon: <LayoutDashboard className="h-5 w-5" />,
       path: '/dashboard',
+    },
+    {
+      name: 'Workflow Builder',
+      icon: <GitBranch className="h-5 w-5" />,
+      path: '/workflows/builder',
     },
     {
       name: 'Board',

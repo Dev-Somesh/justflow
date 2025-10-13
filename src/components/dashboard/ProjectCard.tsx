@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import UserAvatar from '@/components/ui/UserAvatar';
@@ -13,14 +14,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn, responsive } from '@/utils/theme';
+import { Button } from '@/components/ui/button';
 
 interface ProjectCardProps {
   project: Project;
   onClick: () => void;
+  ctaLabel?: string;
+  onCtaClick?: () => void;
+  density?: 'default' | 'compact';
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick, ctaLabel, onCtaClick, density = 'default' }) => {
   const { getUserById } = useProject();
+  const isCompact = density === 'compact';
+  const navigate = useNavigate();
   
   // Calculate progress
   const totalTasks = project.tasks ? project.tasks.length : 0;
@@ -73,7 +81,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
       className="hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
       onClick={onClick}
     >
-      <CardHeader className="pb-2">
+      <CardHeader className={cn("pb-2", isCompact && "pb-1")}>
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{project.name}</CardTitle>
           {activeSprint && (
@@ -95,7 +103,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
           )}
         </div>
       </CardHeader>
-      <CardContent className="pb-2">
+      <CardContent className={cn("pb-2", isCompact && "pb-1")}>
         <p className="text-sm text-gray-500 mb-4 line-clamp-2">{project.description}</p>
         
         <div className="mb-2">
@@ -136,24 +144,34 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         {/* Additional metrics section */}
         <div className="mt-4 flex flex-wrap gap-2">
           {highPriorityTasks > 0 && (
-            <div className="bg-red-50 text-red-600 rounded-full px-2 py-1 text-xs flex items-center">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); navigate('/board?priority=high'); }}
+              className="bg-red-50 text-red-600 rounded-full px-2 py-1 text-xs flex items-center hover:bg-red-100"
+            >
               <AlertTriangle className="h-3 w-3 mr-1" />
               {highPriorityTasks} high priority
-            </div>
+            </button>
           )}
-          
           {activeSprint && (
-            <div className="bg-blue-50 text-blue-600 rounded-full px-2 py-1 text-xs flex items-center">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); navigate(`/board?sprint=${activeSprint.id}`); }}
+              className="bg-blue-50 text-blue-600 rounded-full px-2 py-1 text-xs flex items-center hover:bg-blue-100"
+            >
               <Clock className="h-3 w-3 mr-1" />
               {format(new Date(activeSprint.endDate), 'MMM d')}
-            </div>
+            </button>
           )}
-          
-          {progress === 100 && (
-            <div className="bg-green-50 text-green-600 rounded-full px-2 py-1 text-xs flex items-center">
-              <CheckCircle2 className="h-3 w-3 mr-1" />
-              Completed
-            </div>
+          {progress < 100 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); navigate('/board?status=in-progress'); }}
+              className="bg-amber-50 text-amber-700 rounded-full px-2 py-1 text-xs flex items-center hover:bg-amber-100"
+            >
+              <Clock className="h-3 w-3 mr-1" />
+              Needs attention
+            </button>
           )}
         </div>
       </CardContent>
@@ -170,9 +188,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
             </div>
           )}
         </div>
-        <div className="text-xs text-gray-500 flex items-center">
-          <Calendar className="h-3 w-3 mr-1" />
-          {format(new Date(), 'MMM d, yyyy')}
+        <div className="flex items-center gap-2">
+          <div className="text-xs text-gray-500 hidden sm:flex items-center">
+            <Calendar className="h-3 w-3 mr-1" />
+            {format(new Date(), 'MMM d, yyyy')}
+          </div>
+          {ctaLabel && (
+            <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onCtaClick && onCtaClick(); }}>
+              {ctaLabel}
+            </Button>
+          )}
         </div>
       </CardFooter>
     </Card>

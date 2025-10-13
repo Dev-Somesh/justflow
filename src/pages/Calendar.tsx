@@ -16,7 +16,9 @@ const CalendarPage: React.FC = () => {
   const [view, setView] = useState<'day' | 'upcoming'>('day');
   
   // Get all sprints
-  const sprints = currentProject ? getSprints(currentProject.id) : [];
+  const sprints = useMemo(() => {
+    return currentProject ? getSprints(currentProject.id) : [];
+  }, [currentProject, getSprints]);
   
   // Tasks with due dates
   const tasksWithDueDates = useMemo(() => {

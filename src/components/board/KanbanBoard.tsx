@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useProject, TaskStatus, TaskFilters, TaskPriority } from '@/contexts/ProjectContext';
+import { useTasks, useUpdateTask } from '@/lib/api/tasks';
 import TaskCard from './TaskCard';
 import TaskFiltersComponent from './TaskFilters';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
@@ -43,7 +44,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   filters = {} 
 }) => {
   const { toast } = useToast();
-  const { getTasksByStatus, updateTaskStatus, filterTasks } = useProject();
+  const { filterTasks } = useProject();
+  const { data: apiTasks = [] } = useTasks(projectId);
+  const updateTaskMutation = useUpdateTask();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<TaskFilters>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -74,7 +77,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     setActiveFilters(filters);
   };
 
-  const handleDragEnd = (result: DropResult) => {
+  const handleDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
     // Dropped outside the list
@@ -94,12 +97,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     setIsLoading(true);
 
     try {
-      // Update task status
-      updateTaskStatus(
-        projectId,
-        draggableId,
-        destination.droppableId as TaskStatus
-      );
+      await updateTaskMutation.mutateAsync({ id: draggableId, updates: { status: destination.droppableId as TaskStatus } });
       
       // Show success toast
       toast({
@@ -134,13 +132,28 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   // Get tasks for each column, applying filters if any
   const getFilteredTasksByStatus = (status: TaskStatus) => {
+    const base = apiTasks.filter(t => t.status === status);
     if (searchQuery || Object.keys(activeFilters).length > 0) {
-      return filterTasks(projectId, searchQuery, { 
-        ...activeFilters, 
-        status: [status] 
+      // Adapt simple filters to apiTasks
+      return base.filter(t => {
+        if (searchQuery && !t.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+        if (activeFilters.priority && activeFilters.priority.length) {
+          if (!activeFilters.priority.includes((t.priority || 'medium') as any)) return false;
+        }
+        if (activeFilters.assigneeId && activeFilters.assigneeId.length) {
+          if (activeFilters.assigneeId.includes('unassigned')) {
+            if (t.assigneeId) return false;
+          } else if (!t.assigneeId || !activeFilters.assigneeId.includes(t.assigneeId)) return false;
+        }
+        if (activeFilters.sprintId && activeFilters.sprintId.length) {
+          if (activeFilters.sprintId.includes('none')) {
+            if (t.sprintId) return false;
+          } else if (!t.sprintId || !activeFilters.sprintId.includes(t.sprintId)) return false;
+        }
+        return true;
       });
     }
-    return getTasksByStatus(projectId, status);
+    return base;
   };
 
   if (hasError) {

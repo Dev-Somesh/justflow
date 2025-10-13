@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
-import type { TaskFilters } from '@/contexts/ProjectContext';
+import type { TaskFilters, TaskStatus, TaskPriority } from '@/contexts/ProjectContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -68,13 +68,12 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
     setDateRange(undefined);
   };
   
-  const toggleStatusFilter = (status: string) => {
+  const toggleStatusFilter = (status: TaskStatus) => {
     setFilters(prev => {
       const currentStatuses = prev.status || [];
-      const newStatuses = currentStatuses.includes(status as any)
+      const newStatuses = currentStatuses.includes(status)
         ? currentStatuses.filter(s => s !== status)
-        : [...currentStatuses, status] as any;
-      
+        : [...currentStatuses, status];
       return {
         ...prev,
         status: newStatuses.length > 0 ? newStatuses : undefined
@@ -82,13 +81,12 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
     });
   };
   
-  const togglePriorityFilter = (priority: string) => {
+  const togglePriorityFilter = (priority: TaskPriority) => {
     setFilters(prev => {
       const currentPriorities = prev.priority || [];
-      const newPriorities = currentPriorities.includes(priority as any)
+      const newPriorities = currentPriorities.includes(priority)
         ? currentPriorities.filter(p => p !== priority)
-        : [...currentPriorities, priority] as any;
-      
+        : [...currentPriorities, priority];
       return {
         ...prev,
         priority: newPriorities.length > 0 ? newPriorities : undefined
@@ -150,9 +148,9 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ projectId, onFilterChange }) 
   const isFilterActive = (type: string, value: string) => {
     switch (type) {
       case 'status':
-        return filters.status?.includes(value as any) || false;
+        return filters.status?.includes(value as TaskStatus) || false;
       case 'priority':
-        return filters.priority?.includes(value as any) || false;
+        return filters.priority?.includes(value as TaskPriority) || false;
       case 'assignee':
         return filters.assigneeId?.includes(value) || false;
       case 'label':

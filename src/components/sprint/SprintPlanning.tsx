@@ -99,7 +99,11 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
                 <CalendarRange className="mr-2 h-4 w-4" />
                 {sprint.name}
                 <Badge 
-                  variant={`sprint-${sprint.status}` as any} 
+                  variant={
+                    sprint.status === 'active' ? 'sprint-active' :
+                    sprint.status === 'planning' ? 'sprint-planning' :
+                    sprint.status === 'completed' ? 'sprint-completed' : 'default'
+                  }
                   className="ml-auto"
                 >
                   {sprint.status}
@@ -121,7 +125,11 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
               <CardTitle>{currentSprint.name} Planning</CardTitle>
               <CardDescription>{currentSprint.goal}</CardDescription>
             </div>
-            <Badge variant={`sprint-${currentSprint.status}` as any}>
+            <Badge variant={
+              currentSprint.status === 'active' ? 'sprint-active' :
+              currentSprint.status === 'planning' ? 'sprint-planning' :
+              currentSprint.status === 'completed' ? 'sprint-completed' : 'default'
+            }>
               {currentSprint.status}
             </Badge>
           </div>
@@ -136,7 +144,6 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
                   {format(new Date(currentSprint.startDate), 'MMM dd')} - {format(new Date(currentSprint.endDate), 'MMM dd, yyyy')}
                 </span>
               </div>
-              
               <div>
                 <div className="flex justify-between items-center mb-1 text-sm">
                   <span>Sprint Capacity</span>
@@ -150,7 +157,6 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
                   indicatorClassName={isSprintOverloaded ? "bg-red-500" : undefined}
                 />
               </div>
-              
               {isSprintOverloaded && (
                 <div className="flex items-center gap-2 text-sm text-red-500">
                   <AlertTriangle className="h-4 w-4" />
@@ -161,7 +167,6 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
           </div>
         </CardContent>
       </Card>
-      
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -198,7 +203,11 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
                           />
                           <span className="font-medium">{task.title}</span>
                         </div>
-                        <Badge variant={`priority-${task.priority}` as any} className="text-xs">
+                        <Badge variant={
+                          task.priority === 'high' ? 'priority-high' :
+                          task.priority === 'medium' ? 'priority-medium' :
+                          task.priority === 'low' ? 'priority-low' : 'default'
+                        } className="text-xs">
                           {task.priority}
                         </Badge>
                       </div>
@@ -262,10 +271,18 @@ const SprintPlanning: React.FC<SprintPlanningProps> = ({
                         <span className="font-medium">{task.title}</span>
                       </div>
                       <div className="flex gap-1">
-                        <Badge variant={`priority-${task.priority}` as any} className="text-xs">
+                        <Badge variant={
+                          task.priority === 'high' ? 'priority-high' :
+                          task.priority === 'medium' ? 'priority-medium' :
+                          task.priority === 'low' ? 'priority-low' : 'default'
+                        } className="text-xs">
                           {task.priority}
                         </Badge>
-                        <Badge variant={`status-${task.status}` as any} className="text-xs">
+                        <Badge variant={
+                          task.status === 'todo' ? 'status-todo' :
+                          task.status === 'in-progress' ? 'status-in-progress' :
+                          task.status === 'done' ? 'status-done' : 'default'
+                        } className="text-xs">
                           {task.status}
                         </Badge>
                       </div>

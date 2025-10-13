@@ -2,7 +2,6 @@
 import React from 'react';
 import AppHeader from './AppHeader';
 import AppSidebar from './AppSidebar';
-import AppFooter from './AppFooter';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AppLayoutProps {
@@ -23,7 +22,6 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           </div>
         </main>
       </div>
-      <AppFooter />
     </div>
   );
 };

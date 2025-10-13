@@ -130,7 +130,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ projectId, taskId, isOpen, onClos
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" aria-modal="true" role="dialog">
         <DialogHeader>
           <DialogTitle>
             <div className="flex items-center gap-2">

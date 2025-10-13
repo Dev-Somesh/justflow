@@ -37,7 +37,14 @@ const Board = () => {
   useEffect(() => {
     try {
       const params = new URLSearchParams(location.search);
-      const filters: any = {};
+      type BoardFilters = {
+        priority?: string;
+        status?: string;
+        assignee?: string;
+        taskId?: string;
+        sprintId?: string;
+      };
+      const filters: BoardFilters = {};
       
       if (params.has('priority')) filters.priority = params.get('priority');
       if (params.has('status')) filters.status = params.get('status');

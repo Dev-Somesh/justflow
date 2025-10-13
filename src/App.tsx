@@ -3,11 +3,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { ErrorBoundary } from "./components/core/ErrorBoundary";
 import React, { Suspense, lazy } from "react";
 import { ProjectProvider } from "./contexts/ProjectContext";
-import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Lazy load pages for better performance
 const LandingPage = lazy(() => import("./pages/LandingPage"));
@@ -24,6 +25,7 @@ const FAQs = lazy(() => import("./pages/FAQs"));
 const UserGuides = lazy(() => import("./pages/UserGuides"));
 const APIDocumentation = lazy(() => import("./pages/APIDocumentation"));
 const About = lazy(() => import("./pages/About"));
+const WorkflowBuilderPage = lazy(() => import("./pages/WorkflowBuilderPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -141,6 +143,11 @@ const App = () => (
                     <Help />
                   </ProtectedRoute>
                 } />
+                <Route path="/workflows/builder" element={
+                  <ProtectedRoute>
+                    <WorkflowBuilderPage />
+                  </ProtectedRoute>
+                } />
                 
                 {/* Redirect /index to /dashboard */}
                 <Route path="/index" element={<Navigate to="/dashboard" replace />} />
@@ -148,6 +155,7 @@ const App = () => (
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<ErrorBoundary><NotFound /></ErrorBoundary>} />
               </Routes>
+              {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
             </Suspense>
           </BrowserRouter>
         </TooltipProvider>

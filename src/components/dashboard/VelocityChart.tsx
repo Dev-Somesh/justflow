@@ -60,7 +60,10 @@ const VelocityChart = () => {
   if (!currentProject) {
     return (
       <div className="flex items-center justify-center h-64 bg-gray-50 rounded-md">
-        <p className="text-gray-500">No project data available</p>
+        <div className="text-center px-4">
+          <p className="text-gray-700 font-medium mb-2">No project data available</p>
+          <p className="text-gray-500 text-sm">Create a project, add sprints, and assign tasks to view velocity trends.</p>
+        </div>
       </div>
     );
   }
@@ -71,14 +74,17 @@ const VelocityChart = () => {
   const chartConfig = {
     planned: { label: "Planned Points", color: "#8884d8" },
     completed: { label: "Completed Points", color: "#82ca9d" },
-  };
+  } as const;
   
   return (
-    <>
+    <div role="img" aria-label="Team velocity chart" aria-describedby="velocity-desc">
+      <span id="velocity-desc" className="sr-only">
+        The velocity chart compares planned and completed story points across sprints.
+      </span>
       {showDisclaimer && (
         <div className="mb-4 p-2 bg-blue-50 text-blue-700 text-xs rounded">
           Note: This chart shows {tasks.length === 0 ? "sample data" : "minimal data"} for demonstration purposes. 
-          Real velocity metrics will be calculated as your team completes sprints and tasks.
+          Add sprints and estimate tasks with story points to see accurate velocity.
         </div>
       )}
       <ChartContainer config={chartConfig} className="h-[300px]">
@@ -92,7 +98,7 @@ const VelocityChart = () => {
           <Bar dataKey="completed" name="Completed Points" fill="#82ca9d" />
         </BarChart>
       </ChartContainer>
-    </>
+    </div>
   );
 };
 

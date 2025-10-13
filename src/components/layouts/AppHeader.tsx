@@ -7,12 +7,12 @@ import {
   Kanban, 
   Users, 
   Settings,
-  AlertTriangle,
-  Clock,
   Target,
   HelpCircle,
   LogOut,
+  Menu,
 } from 'lucide-react';
+import { cn, responsive } from '@/utils/theme';
 import { Button } from '@/components/ui/button';
 import { 
   Tooltip,
@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProject } from '@/contexts/ProjectContext';
+import { useTasks } from '@/lib/api/tasks';
 import Logo from '@/components/ui/Logo';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -28,10 +29,11 @@ const AppHeader = () => {
   const navigate = useNavigate();
   const location = useLocation(); // Added useLocation to properly detect current path
   const { toast } = useToast();
-  const { currentProject, tasks } = useProject();
+  const { currentProject } = useProject();
+  const { data: apiTasks = [] } = useTasks(currentProject?.id || 'project-1');
   
-  const highPriorityCount = tasks.filter(t => t.priority === 'high').length;
-  const pendingTasksCount = tasks.filter(t => t.status !== 'done').length;
+  const highPriorityCount = apiTasks.filter(t => t.priority === 'high').length;
+  const pendingTasksCount = apiTasks.filter(t => t.status !== 'done').length;
   const username = sessionStorage.getItem('username') || 'admin';
   
   const handleLogout = () => {
@@ -106,67 +108,8 @@ const AppHeader = () => {
       </div>
       
       <div className="flex items-center">
-        <nav className="hidden md:flex items-center gap-1">
-          {mainRoutes.map((route) => (
-            <Button
-              key={route.path}
-              variant={isActive(route.path) ? "default" : "ghost"}
-              size="sm"
-              className="gap-2"
-              onClick={(e) => handleNavigation(route.path, e)}
-            >
-              {route.icon}
-              <span className="hidden lg:inline">{route.name}</span>
-            </Button>
-          ))}
-        </nav>
-        
+        {/* Top nav removed to avoid duplication with sidebar */}
         <div className="flex items-center ml-4 gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="relative" 
-                  onClick={(e) => handleNavigation('/board?priority=high', e)}
-                >
-                  <AlertTriangle className="h-5 w-5 text-amber-500" />
-                  {highPriorityCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
-                      {highPriorityCount}
-                    </span>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>High Priority Tasks</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="relative" 
-                  onClick={(e) => handleNavigation('/board?status=in-progress', e)}
-                >
-                  <Clock className="h-5 w-5 text-blue-500" />
-                  {pendingTasksCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
-                      {pendingTasksCount}
-                    </span>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Pending Tasks</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
           
           <TooltipProvider>
             <Tooltip>
@@ -175,6 +118,7 @@ const AppHeader = () => {
                   variant="outline" 
                   size="icon" 
                   onClick={(e) => handleNavigation('/help', e)}
+                  aria-label="Open help and documentation"
                 >
                   <HelpCircle className="h-5 w-5 text-gray-500" />
                 </Button>
@@ -184,11 +128,13 @@ const AppHeader = () => {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-
+ 
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <Button variant="outline" size="sm" className="ml-2" onClick={handleLogout}>
+                <Button variant="outline" size="sm" className="ml-2" onClick={handleLogout}
+                  aria-label="Log out"
+                >
                   <LogOut className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Logout ({username})</span>
                 </Button>

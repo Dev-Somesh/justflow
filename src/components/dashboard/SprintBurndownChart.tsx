@@ -13,7 +13,15 @@ const SprintBurndownChart = () => {
   if (!activeSprint || !currentProject) {
     return (
       <div className="flex items-center justify-center h-64 bg-gray-50 rounded-md">
-        <p className="text-gray-500">No active sprint available</p>
+        <div className="text-center px-4">
+          <p className="text-gray-700 font-medium mb-2">No active sprint available</p>
+          <p className="text-gray-500 text-sm">To see a burndown chart:</p>
+          <ul className="text-gray-500 text-sm mt-2 space-y-1 list-disc list-inside">
+            <li>Create or activate a sprint in your project</li>
+            <li>Assign tasks with story points to the sprint</li>
+            <li>Move tasks to Done as your team completes work</li>
+          </ul>
+        </div>
       </div>
     );
   }
@@ -30,7 +38,7 @@ const SprintBurndownChart = () => {
   const sprintDays = differenceInDays(endDate, startDate) + 1;
   
   // Generate ideal line
-  const idealBurndown = [];
+  const idealBurndown: Array<{ date: string; ideal: number | null; actual: number | null; }> = [];
   const pointsPerDay = totalStoryPoints / sprintDays;
   
   for (let i = 0; i <= sprintDays; i++) {
@@ -45,23 +53,29 @@ const SprintBurndownChart = () => {
   }
   
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={idealBurndown} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" />
-        <YAxis label={{ value: 'Story Points Remaining', angle: -90, position: 'insideLeft' }} />
-        <Tooltip />
-        <Legend />
-        <ReferenceLine x={format(new Date(), 'MMM dd')} stroke="red" label="Today" />
-        <Line type="monotone" dataKey="ideal" stroke="#8884d8" name="Ideal Burndown" />
-        <Line type="monotone" dataKey="actual" stroke="#82ca9d" name="Actual Burndown" activeDot={{ r: 8 }} />
-      </LineChart>
-    </ResponsiveContainer>
+    <div role="img" aria-label="Sprint burndown chart" aria-describedby="burndown-desc">
+      <span id="burndown-desc" className="sr-only">
+        The sprint burndown shows remaining story points over time compared to the ideal line.
+      </span>
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={idealBurndown} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="date" />
+          <YAxis label={{ value: 'Story Points Remaining', angle: -90, position: 'insideLeft' }} />
+          <Tooltip />
+          <Legend />
+          <ReferenceLine x={format(new Date(), 'MMM dd')} stroke="red" label="Today" />
+          <Line type="monotone" dataKey="ideal" stroke="#8884d8" name="Ideal Burndown" />
+          <Line type="monotone" dataKey="actual" stroke="#82ca9d" name="Actual Burndown" activeDot={{ r: 8 }} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
 
 // Helper function to simulate actual burndown data
-const getActualBurndown = (date: Date, tasks: any[], totalPoints: number) => {
+import type { Task } from '@/contexts/ProjectContext';
+const getActualBurndown = (date: Date, tasks: Task[], totalPoints: number) => {
   // This would normally be based on actual task completion dates
   // For now, we'll simulate data based on the current date
   const today = new Date();

@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProject, TaskStatus, TaskPriority } from "@/contexts/ProjectContext";
+import { useCreateTask } from "@/lib/api/tasks";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -66,7 +67,8 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { users, createTask, availableLabels, getSprints } = useProject();
+  const { users, availableLabels, getSprints } = useProject();
+  const createTaskMutation = useCreateTask();
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
 
   const form = useForm<TaskFormValues>({
@@ -84,18 +86,25 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
 
   const sprints = getSprints(projectId);
 
-  const handleSubmit = (values: TaskFormValues) => {
+  const handleSubmit = async (values: TaskFormValues) => {
     try {
-      createTask(projectId, {
-        title: values.title, // Ensure title is explicitly set
+      const id = Math.random().toString(36).slice(2);
+      await createTaskMutation.mutateAsync({
+        id,
+        projectId,
+        title: values.title,
         description: values.description || "",
         status: values.status,
         priority: values.priority,
         storyPoints: values.storyPoints,
         assigneeId: values.assigneeId === "unassigned" ? undefined : values.assigneeId,
         sprintId: values.sprintId === "none" ? undefined : values.sprintId,
-        labelIds: selectedLabels,
+        labels: selectedLabels.map(id => {
+          const l = availableLabels.find(x => x.id === id)!;
+          return { id: l.id, name: l.name, color: l.color };
+        }),
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
+        createdAt: new Date().toISOString(),
       });
       
       form.reset();
@@ -117,7 +126,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+  <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" aria-modal="true" role="dialog">
         <DialogHeader>
           <DialogTitle>New Task</DialogTitle>
           <DialogDescription>
