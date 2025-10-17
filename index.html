@@ -1,43 +1,35 @@
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JustFlow - Modern Project Management</title>
-    <meta name="description" content="JustFlow - A modern project management tool designed to help teams track tasks, manage sprints, and deliver projects efficiently.">
-    <meta name="author" content="Lovable">
-    <meta property="og:image" content="/og-image.png">
-    
-    <!-- Favicon Configuration -->
-    <link rel="icon" type="image/svg+xml" href="/justflow-icon.svg?v=6">
-    <link rel="icon" type="image/png" href="/justflow-icon.svg?v=6">
-    <link rel="shortcut icon" href="/justflow-icon.svg?v=6">
-    <link rel="apple-touch-icon" sizes="180x180" href="/justflow-icon.svg?v=6">
-    <link rel="icon" sizes="32x32" href="/justflow-icon.svg?v=6">
-    <link rel="icon" sizes="16x16" href="/justflow-icon.svg?v=6">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#3B82F6">
-    <meta name="msapplication-TileColor" content="#3B82F6">
-    <meta name="msapplication-config" content="/browserconfig.xml">
-  </head>
-
-  <body>
-    <div id="root"></div>
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
-    <script type="module" src="/src/main.tsx"></script>
-    
-    <!-- Force favicon reload -->
-    <script>
-      // Force favicon reload to ensure new icon is displayed
-      (function() {
-        const timestamp = new Date().getTime();
-        const favicon = document.querySelector('link[rel="icon"]');
-        if (favicon) {
-          favicon.href = '/justflow-icon.svg?v=' + timestamp;
-        }
-      })();
-    </script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JustFlow - Modern Project Management</title>
+<meta name="description" content="JustFlow - A modern project management tool designed to help teams track tasks, manage sprints, and deliver projects efficiently.">
+<meta name="author" content="Lovable">
+<meta property="og:image" content="/og-image.png">
+<link rel="icon" type="image/svg+xml" href="/justflow-icon.svg?v=7">
+<link rel="icon" type="image/png" href="/justflow-icon.svg?v=7">
+<link rel="shortcut icon" href="/justflow-icon.svg?v=7">
+<link rel="apple-touch-icon" sizes="180x180" href="/justflow-icon.svg?v=7">
+<link rel="icon" sizes="32x32" href="/justflow-icon.svg?v=7">
+<link rel="icon" sizes="16x16" href="/justflow-icon.svg?v=7">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#3B82F6">
+<meta name="msapplication-TileColor" content="#3B82F6">
+<meta name="msapplication-config" content="/browserconfig.xml">
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+<script type="module" src="/src/main.tsx"></script>
+<script>
+(function() {
+  const timestamp = new Date().getTime();
+  const favicon = document.querySelector('link[rel="icon"]');
+  if (favicon) {
+    favicon.href = '/justflow-icon.svg?v=' + timestamp;
+  }
+})();
+</script>
+</body>
 </html>

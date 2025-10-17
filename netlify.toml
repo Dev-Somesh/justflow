@@ -9,12 +9,8 @@
   [build.environment]
     NODE_VERSION = "18"
 
-# Note: HTML validation plugin is disabled to prevent build failures
-# The HTML is valid but the plugin has strict rules about self-closing tags
-# [[plugins]]
-#   package = "netlify-plugin-html-validate"
-#   [plugins.inputs]
-#     disabled = true
+# HTML validation plugin removed to prevent build failures
+# The plugin has overly strict rules about trailing whitespace
 
 # Redirect rules for SPA
 [[redirects]]
