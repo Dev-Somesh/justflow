@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { initSentry } from '@/utils/monitoring/sentry';
+import '@/utils/mockData'; // Initialize mock data
 // Start MSW in development only
 async function startMocks() {
   if (import.meta.env.DEV) {

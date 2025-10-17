@@ -15,6 +15,11 @@ import {
   Menu,
   X,
   GitBranch,
+  FileText,
+  RefreshCw,
+  FolderOpen,
+  BarChart3,
+  Bug,
 } from 'lucide-react';
 import { cn, responsive } from '@/utils/theme';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -44,9 +49,24 @@ const AppSidebar = () => {
       path: '/dashboard',
     },
     {
-      name: 'Workflow Builder',
-      icon: <GitBranch className="h-5 w-5" />,
-      path: '/workflows/builder',
+      name: 'Issues',
+      icon: <Bug className="h-5 w-5" />,
+      path: '/issues',
+    },
+    {
+      name: 'Cycles',
+      icon: <RefreshCw className="h-5 w-5" />,
+      path: '/cycles',
+    },
+    {
+      name: 'Modules',
+      icon: <FolderOpen className="h-5 w-5" />,
+      path: '/modules',
+    },
+    {
+      name: 'Pages',
+      icon: <FileText className="h-5 w-5" />,
+      path: '/pages',
     },
     {
       name: 'Board',
@@ -59,6 +79,11 @@ const AppSidebar = () => {
       path: '/calendar',
     },
     {
+      name: 'Analytics',
+      icon: <BarChart3 className="h-5 w-5" />,
+      path: '/analytics',
+    },
+    {
       name: 'Team',
       icon: <Users className="h-5 w-5" />,
       path: '/team',
@@ -67,6 +92,11 @@ const AppSidebar = () => {
       name: 'Epics',
       icon: <Target className="h-5 w-5" />,
       path: '/epics',
+    },
+    {
+      name: 'Workflow Builder',
+      icon: <GitBranch className="h-5 w-5" />,
+      path: '/workflows/builder',
     },
     {
       name: 'Settings',

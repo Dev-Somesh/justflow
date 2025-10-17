@@ -19,7 +19,8 @@ export type ApiTask = {
 const list = async (projectId: string): Promise<ApiTask[]> => {
   const res = await fetch(`/api/tasks?projectId=${encodeURIComponent(projectId)}`);
   if (!res.ok) throw new Error('Failed to fetch tasks');
-  return res.json();
+  const data = await res.json();
+  return data;
 };
 
 const create = async (task: ApiTask): Promise<ApiTask> => {

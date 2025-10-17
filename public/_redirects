@@ -1,0 +1,8 @@
+# Netlify redirects for Single Page Application (SPA)
+# This ensures all routes are handled by the React app
+
+# Handle all routes by serving index.html
+/*    /index.html   200
+
+# Optional: Handle specific API routes if you have any
+# /api/*  https://your-api-domain.com/api/:splat  200

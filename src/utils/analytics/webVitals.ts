@@ -9,7 +9,7 @@ export type WebVitalsMetric = {
 
 const vitalsCallback = (metric: WebVitalsMetric) => {
   // TODO: Send to your analytics service
-  console.log(metric);
+  // In production, this would send metrics to your analytics service
 };
 
 export function reportWebVitals(): void {

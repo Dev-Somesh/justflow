@@ -155,6 +155,12 @@
   /* Smooth Scrolling */
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  /* Prevent horizontal overflow */
+  body {
+    overflow-x: hidden;
   }
 
   /* Custom Scrollbar */
@@ -246,5 +252,21 @@
   /* Improved Loading States */
   .skeleton {
     @apply bg-muted animate-pulse rounded;
+  }
+
+  /* Prevent overlapping issues */
+  .no-overflow {
+    overflow: hidden;
+  }
+
+  .relative-container {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Ensure proper stacking context */
+  .stacking-context {
+    position: relative;
+    z-index: 0;
   }
 }

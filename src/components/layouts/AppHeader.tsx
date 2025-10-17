@@ -113,7 +113,7 @@ const AppHeader = () => {
           
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button 
                   variant="outline" 
                   size="icon" 
@@ -131,7 +131,7 @@ const AppHeader = () => {
  
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button variant="outline" size="sm" className="ml-2" onClick={handleLogout}
                   aria-label="Log out"
                 >

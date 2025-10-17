@@ -25,7 +25,8 @@ export const handlers = [
   // Projects
   http.get('/api/projects', async () => {
     const raw = localStorage.getItem('justflow.projects');
-    return HttpResponse.json(raw ? JSON.parse(raw) : []);
+    const data = raw ? JSON.parse(raw) : [];
+    return HttpResponse.json(data);
   }),
   http.post('/api/projects', async ({ request }) => {
     const body = await request.json();

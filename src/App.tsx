@@ -4,18 +4,24 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { ErrorBoundary } from "./components/core/ErrorBoundary";
+import ErrorBoundary from "./components/core/ErrorBoundary";
 import React, { Suspense, lazy } from "react";
 import { ProjectProvider } from "./contexts/ProjectContext";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { PageSkeleton } from "@/components/ui/LoadingSkeletons";
 
 // Lazy load pages for better performance
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Index"));
-const Board = lazy(() => import("./pages/Board"));
+const Issues = lazy(() => import("./pages/Issues"));
+const Cycles = lazy(() => import("./pages/Cycles"));
+const Modules = lazy(() => import("./pages/Modules"));
+const Pages = lazy(() => import("./pages/Pages"));
+const Board = lazy(() => import("./pages/EnhancedBoard"));
 const Calendar = lazy(() => import("./pages/Calendar"));
+const Analytics = lazy(() => import("./pages/Analytics"));
 const Team = lazy(() => import("./pages/Team"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Epics = lazy(() => import("./pages/Epics"));
@@ -37,12 +43,11 @@ const queryClient = new QueryClient({
   },
 });
 
-// Loading component for Suspense fallback
+// Enhanced loading component for Suspense fallback
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="text-center space-y-4">
-      <LoadingSpinner size="lg" />
-      <p className="text-muted-foreground">Loading...</p>
+  <div className="min-h-screen bg-gray-50/50">
+    <div className="p-6">
+      <PageSkeleton />
     </div>
   </div>
 );
@@ -54,18 +59,27 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   React.useEffect(() => {
     const checkAuth = () => {
-      const authStatus = sessionStorage.getItem('loginSuccess') === 'true';
-      setIsAuthenticated(authStatus);
-      setIsLoading(false);
+      try {
+        const authStatus = sessionStorage.getItem('loginSuccess') === 'true';
+        setIsAuthenticated(authStatus);
+        setIsLoading(false);
+      } catch (error) {
+        setIsAuthenticated(false);
+        setIsLoading(false);
+      }
     };
     
     checkAuth();
   }, []);
   
+  
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-4">
+          <LoadingSpinner size="lg" />
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
       </div>
     );
   }
@@ -73,7 +87,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  
   return (
     <ErrorBoundary>
       {children}
@@ -113,6 +126,26 @@ const App = () => (
                     <Dashboard />
                   </ProtectedRoute>
                 } />
+                <Route path="/issues" element={
+                  <ProtectedRoute>
+                    <Issues />
+                  </ProtectedRoute>
+                } />
+                <Route path="/cycles" element={
+                  <ProtectedRoute>
+                    <Cycles />
+                  </ProtectedRoute>
+                } />
+                <Route path="/modules" element={
+                  <ProtectedRoute>
+                    <Modules />
+                  </ProtectedRoute>
+                } />
+                <Route path="/pages" element={
+                  <ProtectedRoute>
+                    <Pages />
+                  </ProtectedRoute>
+                } />
                 <Route path="/board" element={
                   <ProtectedRoute>
                     <Board />
@@ -121,6 +154,11 @@ const App = () => (
                 <Route path="/calendar" element={
                   <ProtectedRoute>
                     <Calendar />
+                  </ProtectedRoute>
+                } />
+                <Route path="/analytics" element={
+                  <ProtectedRoute>
+                    <Analytics />
                   </ProtectedRoute>
                 } />
                 <Route path="/team" element={

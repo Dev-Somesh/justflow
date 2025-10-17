@@ -11,7 +11,8 @@ export type ApiProject = {
 const list = async (): Promise<ApiProject[]> => {
   const res = await fetch('/api/projects');
   if (!res.ok) throw new Error('Failed to fetch projects');
-  return res.json();
+  const data = await res.json();
+  return data;
 };
 
 export const useProjects = () => {

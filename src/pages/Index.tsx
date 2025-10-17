@@ -1,34 +1,31 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppLayout from '@/components/layouts/AppLayout';
-import SprintBurndownChart from '@/components/dashboard/SprintBurndownChart';
-import VelocityChart from '@/components/dashboard/VelocityChart';
-import ProjectCard from '@/components/dashboard/ProjectCard';
-import RecentActivityWidget from '@/components/dashboard/RecentActivityWidget';
-import StoryPointsInfo from '@/components/dashboard/StoryPointsInfo';
-import TeamWorkloadView from '@/components/dashboard/TeamWorkloadView';
-import AttentionWidget from '@/components/dashboard/AttentionWidget';
+import EnhancedAppLayout from '@/components/layouts/EnhancedAppLayout';
+import ModernDashboard from '@/components/dashboard/ModernDashboard';
+import { DashboardSkeleton } from '@/components/ui/LoadingSkeletons';
 import { useProject } from '@/contexts/ProjectContext';
-import { useProjects } from '@/lib/api/projects';
-import { useTasks } from '@/lib/api/tasks';
+import { useUnifiedProjects, useUnifiedTasks } from '@/lib/api/unified';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { CalendarClock, PlusCircle } from 'lucide-react';
+import { CalendarClock, PlusCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NewTaskModal from '@/components/modals/NewTaskModal';
 import { useToast } from '@/hooks/use-toast';
-import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import ErrorBoundary from '@/components/core/ErrorBoundary';
 
 const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
-  const { setCurrentProject } = useProject();
-  const { data: apiProjects = [] } = useProjects();
+  const { setCurrentProject, currentProject } = useProject();
+  
+  // Use unified data management
+  const { data: apiProjects = [], isLoading: projectsLoading, error: projectsError } = useUnifiedProjects();
+  const { data: apiTasks = [], isLoading: tasksLoading, error: tasksError } = useUnifiedTasks(currentProject?.id || 'project-1');
+  
   const firstProject = apiProjects[0] || null;
-  const { data: apiTasks = [] } = useTasks(firstProject?.id || 'project-1');
   
   // Authentication check with enhanced error handling
   useEffect(() => {
@@ -41,7 +38,6 @@ const Index = () => {
         navigate('/login');
       }
     } catch (error) {
-      console.error('Authentication check failed:', error);
       navigate('/login');
     }
   }, [navigate]);
@@ -80,102 +76,82 @@ const Index = () => {
     setIsNewTaskModalOpen(false);
   };
 
-  // If not authenticated, show nothing while redirecting
+  // If not authenticated, show loading state
   if (!isAuthenticated) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Checking authentication...</h2>
-          <p className="text-gray-500">You will be redirected to login if needed.</p>
+      <EnhancedAppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <div>
+              <h2 className="text-xl font-semibold mb-2">Checking authentication...</h2>
+              <p className="text-gray-500">You will be redirected to login if needed.</p>
+            </div>
+          </div>
         </div>
-      </div>
+      </EnhancedAppLayout>
     );
   }
 
-  // Dashboard rendering with authenticated user
+  // Show loading state while data is being fetched
+  if (projectsLoading || tasksLoading) {
+    return (
+      <EnhancedAppLayout>
+        <div className="p-6">
+          <DashboardSkeleton />
+        </div>
+      </EnhancedAppLayout>
+    );
+  }
+
+  // Show error state if there are errors
+  if (projectsError || tasksError) {
+    return (
+      <EnhancedAppLayout>
+        <div className="p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error loading data</AlertTitle>
+            <AlertDescription>
+              {projectsError?.message || tasksError?.message || 'An unexpected error occurred'}
+            </AlertDescription>
+          </Alert>
+        </div>
+      </EnhancedAppLayout>
+    );
+  }
 
   return (
-    <AppLayout>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <Button onClick={handleQuickAddTask}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Task
-            </Button>
-          </div>
-          
-          {totalTasks === 0 && (
-            <Alert className="bg-amber-50 text-amber-800 border-amber-200">
-              <AlertTitle>No tasks added yet</AlertTitle>
-              <AlertDescription>
-                Start by adding your first task using the "Add Task" button above.
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          {firstProject && (
-            <ProjectCard 
-              project={firstProject}
-              onClick={handleProjectClick}
-              ctaLabel="Open Board"
-              onCtaClick={handleProjectClick}
-              density="compact"
+    <EnhancedAppLayout>
+      <div className="p-6">
+        {/* Enhanced Welcome Message */}
+        {totalTasks === 0 && (
+          <Alert className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertTitle className="text-blue-800">Welcome to JustFlow!</AlertTitle>
+            <AlertDescription className="text-blue-700">
+              Get started by creating your first project or adding tasks to see your dashboard come to life.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Modern Dashboard */}
+        <ModernDashboard projects={apiProjects} tasks={apiTasks} />
+
+        {/* New Task Modal */}
+        {isNewTaskModalOpen && (
+          <ErrorBoundary>
+            <NewTaskModal 
+              projectId={firstProject?.id || 'project-1'}
+              initialStatus="todo"
+              isOpen={isNewTaskModalOpen}
+              onClose={handleModalClose}
+              onSuccess={handleTaskCreated}
             />
-          )}
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
-              <h2 className="text-lg font-medium mb-4">Sprint Burndown</h2>
-              {totalTasks === 0 ? (
-                <div className="flex items-center justify-center h-48 bg-gray-50 rounded-md">
-                  <p className="text-gray-500">No tasks available to generate burndown chart</p>
-                </div>
-              ) : (
-                <SprintBurndownChart />
-              )}
-            </div>
-            <div className="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
-              <h2 className="text-lg font-medium mb-4">Team Velocity</h2>
-              {totalTasks === 0 ? (
-                <div className="flex items-center justify-center h-48 bg-gray-50 rounded-md">
-                  <p className="text-gray-500">No historical data available for velocity chart</p>
-                </div>
-              ) : (
-                <VelocityChart />
-              )}
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
-            <h2 className="text-lg font-medium mb-4">Team Workload</h2>
-            <TeamWorkloadView projectId={firstProject?.id || 'project-1'} />
-          </div>
-        </div>
-        
-        <div className="space-y-6">
-          <AttentionWidget projectId={firstProject?.id || 'project-1'} />
-          <StoryPointsInfo />
-        </div>
+          </ErrorBoundary>
+        )}
       </div>
-      
-      <div className="mt-6">
-        <RecentActivityWidget projectId={firstProject?.id || 'project-1'} limit={5} />
-      </div>
-      {/* New Task Modal */}
-      {isNewTaskModalOpen && (
-        <ErrorBoundary>
-           <NewTaskModal 
-             projectId={firstProject?.id || 'project-1'}
-             initialStatus="todo"
-             isOpen={isNewTaskModalOpen}
-             onClose={handleModalClose}
-             onSuccess={handleTaskCreated}
-           />
-        </ErrorBoundary>
-      )}
-    </AppLayout>
+    </EnhancedAppLayout>
   );
 };
 

@@ -43,7 +43,7 @@ class AnalyticsService {
       timestamp: Date.now(),
     });
     // TODO: Send to analytics service
-    console.log('Event tracked:', event);
+    // In production, this would send events to your analytics service
   }
 
   updatePerformanceMetrics(metric: WebVitalsMetric): void {
@@ -65,7 +65,7 @@ class AnalyticsService {
         break;
     }
     // TODO: Send to analytics service
-    console.log('Performance metric updated:', metric);
+    // In production, this would send metrics to your analytics service
   }
 
   getEvents(): AnalyticsEvent[] {

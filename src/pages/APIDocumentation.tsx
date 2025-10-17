@@ -344,7 +344,10 @@ const APIDocumentation = () => {
   }
 })
 .then(response => response.json())
-.then(data => console.log(data))
+.then(data => {
+  // Handle response data
+  return data;
+})
 .catch(error => console.error('Error:', error));`}</code></pre>
                         </div>
                         
