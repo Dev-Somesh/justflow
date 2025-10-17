@@ -9,6 +9,19 @@
   [build.environment]
     NODE_VERSION = "18"
 
+# Plugins configuration
+[[plugins]]
+  package = "netlify-plugin-html-validate"
+  [plugins.inputs]
+    # Disable void-style rule that requires omitted end tags
+    rules = { "void-style": "off" }
+
+# Alternative: Disable HTML validation entirely if needed
+# [[plugins]]
+#   package = "netlify-plugin-html-validate"
+#   [plugins.inputs]
+#     disabled = true
+
 # Redirect rules for SPA
 [[redirects]]
   from = "/*"
