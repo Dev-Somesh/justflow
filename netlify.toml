@@ -10,13 +10,7 @@
     NODE_VERSION = "20"
 
 # HTML validation is handled by the post-build script
-# The netlify-plugin-html-validate plugin is disabled to prevent build failures
-
-# Explicitly disable HTML validation plugin (if enabled via UI)
-[[plugins]]
-package = "netlify-plugin-html-validate"
-[plugins.inputs]
-enabled = false
+# The netlify-plugin-html-validate plugin should be disabled via Netlify UI
 
 # Redirect rules for SPA
 [[redirects]]
