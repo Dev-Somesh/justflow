@@ -7,14 +7,10 @@
   
   # Node.js version
   [build.environment]
-    NODE_VERSION = "18"
+    NODE_VERSION = "20"
 
-# HTML validation disabled - using post-build script instead
-# The plugin has issues with file pattern matching
-# [[plugins]]
-# package = "netlify-plugin-html-validate"
-# [plugins.inputs]
-# files = ["dist/**/*.html"]
+# HTML validation is handled by the post-build script
+# The netlify-plugin-html-validate plugin is disabled to prevent build failures
 
 # Redirect rules for SPA
 [[redirects]]
