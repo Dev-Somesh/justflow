@@ -9,8 +9,12 @@
   [build.environment]
     NODE_VERSION = "18"
 
-# HTML validation plugin removed to prevent build failures
-# The plugin has overly strict rules about trailing whitespace
+# HTML validation disabled - using post-build script instead
+# The plugin has issues with file pattern matching
+# [[plugins]]
+# package = "netlify-plugin-html-validate"
+# [plugins.inputs]
+# files = ["dist/**/*.html"]
 
 # Redirect rules for SPA
 [[redirects]]
