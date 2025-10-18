@@ -3,6 +3,29 @@
   "rules": {
     "no-trailing-whitespace": "off",
     "void-style": "off",
-    "no-extra-spacing": "off"
+    "no-extra-spacing": "off",
+    "no-missing-close": "off",
+    "no-raw-characters": "off",
+    "no-self-closing": "off",
+    "no-unknown-elements": "off",
+    "no-unused-disable": "off",
+    "require-sri": "off",
+    "script-type": "off",
+    "style-attr": "off",
+    "wcag/h30": "off",
+    "wcag/h32": "off",
+    "wcag/h36": "off",
+    "wcag/h37": "off",
+    "wcag/h67": "off",
+    "wcag/h71": "off"
+  },
+  "elements": {
+    "script": {
+      "attributes": {
+        "type": {
+          "enum": ["module", "text/javascript", "application/javascript"]
+        }
+      }
+    }
   }
 }

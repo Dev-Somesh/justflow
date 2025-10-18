@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/fix-html-validation.js",
     "build:dev": "vite build --mode development",
     "analyze": "vite build --mode analyze",
     "msw:check": "node -e \"try{require.resolve('msw')}catch(e){process.exit(1)}\" || echo 'MSW not installed'",
@@ -16,7 +16,10 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "html-validate": "html-validate dist/",
+    "html-validate:fix": "html-validate --fix dist/",
+    "fix-html": "node scripts/fix-html-validation.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -94,6 +97,7 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
+    "html-validate": "^10.1.2",
     "jsdom": "^27.0.0",
     "lovable-tagger": "^1.1.7",
     "msw": "^2.6.7",
